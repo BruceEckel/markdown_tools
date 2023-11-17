@@ -1,6 +1,7 @@
 """
 Tests and maintains Markdown files containing embedded code listings.
 """
+import sys
 from typing import Optional
 import typer
 from typing_extensions import Annotated
@@ -18,40 +19,66 @@ app = typer.Typer(
 
 
 @app.command()
-def check():
+def check(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
     """
     Validates Markdown files.
     """
-    for tmp_file in Path(".").glob("*.tmp"):
-        tmp_file.unlink()
-    for md in Path(".").glob("*.md"):
+
+    def _check(md: Path):
+        assert md.exists(), f"{md} does not exist"
         print(f"{md.name}: [{check_markdown(md)}]")
+
+    if filename:
+        _check(Path(filename))
+    else:
+        for md in Path(".").glob("*.md"):
+            _check(md)
 
 
 @app.command()
 def listings(
-    filename: Annotated[Optional[str], typer.Argument()] = None
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
 ):
     """
     Validates code listings within Markdown files.
     """
-    print(filename)
-    if filename:
-        md = Path(filename)
+
+    def _check(md: Path):
         assert md.exists(), f"{md} does not exist"
+        print(separator(md, "+"), end="")
         check_code_listings(md)
+
+    if filename:
+        _check(Path(filename))
     else:
         for md in Path(".").glob("*.md"):
-            print(separator(md, "+"), end="")
-            check_code_listings(md)
+            _check(md)
 
 
 @app.command()
-def renumber():
+def renumber(
+    go: Annotated[
+        Optional[str],
+        typer.Argument(help="'go': perform the changes"),
+    ] = None
+):
     """
     Reorders numbered Markdown files. To insert a file 'n',
     name it 'n.! Chapter Title'. The '!' gives that chapter
     priority over another chapter with the same number.
+    TODO: No flag: show what will be done. Flag: do it.
     """
     chapter_changes = NumberedFile.chapters().changes
     appendix_changes = NumberedFile.appendices().changes
@@ -69,7 +96,12 @@ def renumber():
         # os.rename(appendix.original_name, appendix.new_name)
 
 
-def main():
+@app.callback()
+def main(ctx: typer.Context):
+    if len(sys.argv) == 1:
+        # Manually display the help message
+        print(typer.main.get_command(app).get_help(ctx))
+        raise typer.Exit()
     app()
 
 
