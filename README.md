@@ -1,8 +1,11 @@
 # Markdown Tools
 For working with markdown chapters in a programming book.
 
-To install this from the local package that you've downloaded, 
-move to this project directory and enter:
+To install:
+
+1. Download and unpack this repository. 
+
+2. Move to this project directory and enter:
 
 ```text
 > pip install -e .
@@ -10,7 +13,7 @@ move to this project directory and enter:
 
 This performs a system-wide install from the current directory '.', and the
 `-e` flag makes it editable, which means that if you make any changes to the
-tools those changes are immediately available without re-running `pip`.
+tools, those changes are immediately available without re-running `pip`.
 
 After the installation, any console will contain the command `mt` which is an
 entry point to all the markdown tools. If you would like a different command name,
@@ -21,5 +24,5 @@ open `pyproject.toml` and find this section:
 mt = "markdown_tools.tools:main"
 ```
 
-And change `mt` to the command of your choice. 
+Then change `mt` to the command of your choice. 
 (In this case, you *will* need to re-run `pip` to change the name).
