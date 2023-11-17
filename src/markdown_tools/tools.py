@@ -12,7 +12,9 @@ from markdown_tools import (
 )
 from pathlib import Path
 
-app = typer.Typer()
+app = typer.Typer(
+    context_settings={"help_option_names": ["-h", "--help"]}
+)
 
 
 @app.command()
