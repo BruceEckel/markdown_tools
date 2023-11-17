@@ -2,8 +2,8 @@
 Tests and maintains Markdown files containing embedded code listings.
 """
 import sys
-from typing import Optional
 import typer
+from typing import Optional
 from typing_extensions import Annotated
 from markdown_tools import (
     separator,
@@ -13,9 +13,7 @@ from markdown_tools import (
 )
 from pathlib import Path
 
-app = typer.Typer(
-    context_settings={"help_option_names": ["-h", "--help"]}
-)
+app = typer.Typer(context_settings={"help_option_names": ["-h"]})
 
 
 @app.command()
@@ -96,14 +94,14 @@ def renumber(
         # os.rename(appendix.original_name, appendix.new_name)
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
-    if len(sys.argv) == 1:
+    if ctx.invoked_subcommand is None:
         # Manually display the help message
         print(typer.main.get_command(app).get_help(ctx))
         raise typer.Exit()
-    app()
 
 
 if __name__ == "__main__":
-    main()
+    app()
+    # typer.run(main)
