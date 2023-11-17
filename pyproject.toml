@@ -2,12 +2,8 @@
 name = "markdown-tools"
 version = "0.1.0"
 description = "For working with markdown chapters in a programming book"
-authors = [
-    { name = "Bruce Eckel", email = "MindviewInc@gmail.com" }
-]
-dependencies = [
-    "typer[all]>=0.9.0",
-]
+authors = [{ name = "Bruce Eckel", email = "MindviewInc@gmail.com" }]
+dependencies = ["typer[all]>=0.9.0"]
 readme = "README.md"
 requires-python = ">= 3.8"
 
@@ -17,10 +13,7 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = [
-    "mypy>=1.7.0",
-    "pytest>=7.4.3",
-]
+dev-dependencies = ["mypy>=1.7.0", "pytest>=7.4.3"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -29,4 +22,4 @@ allow-direct-references = true
 line-length = 70
 
 [project.scripts]
-tools = "markdown_tools.tools:main"
+mt = "markdown_tools.tools:main"
