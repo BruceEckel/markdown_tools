@@ -7,7 +7,7 @@ To install:
 
 1. Clone this repository. 
 
-1. Move to this project directory and enter:
+1. Open a command prompt and change to this project directory. Run this command:
 
 ```text
 > pip install -e .
