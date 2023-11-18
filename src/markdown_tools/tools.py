@@ -13,7 +13,10 @@ from markdown_tools import (
 )
 from pathlib import Path
 
-app = typer.Typer(context_settings={"help_option_names": ["-h"]})
+app = typer.Typer(
+    no_args_is_help=True,
+    context_settings={"help_option_names": [""]},
+)
 
 
 @app.command()
@@ -94,14 +97,9 @@ def renumber(
         # os.rename(appendix.original_name, appendix.new_name)
 
 
-@app.callback(invoke_without_command=True)
-def main(ctx: typer.Context):
-    if ctx.invoked_subcommand is None:
-        # Manually display the help message
-        print(typer.main.get_command(app).get_help(ctx))
-        raise typer.Exit()
+def main():
+    app()
 
 
 if __name__ == "__main__":
-    app()
-    # typer.run(main)
+    main()
