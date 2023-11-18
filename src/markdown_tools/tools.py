@@ -37,6 +37,10 @@ def check(
     Validates Markdown files.
     """
 
+    for tmp_file in Path(".").glob("*.mtmp"):
+        print(f"Removing {tmp_file.name}")
+        tmp_file.unlink()
+
     def _check(md: Path):
         assert md.exists(), f"{md} does not exist"
         print(f"{md.name}: [{check_markdown(md)}]")

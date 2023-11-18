@@ -15,9 +15,3 @@ def check_code_listings(md: Path):
         r = check_code_block(listing)
         if r:
             print(r)
-
-
-if __name__ == "__main__":
-    for md in Path(".").glob("*.md"):
-        print(separator(md.name, "+"), end="")
-        check_code_listings(md)
