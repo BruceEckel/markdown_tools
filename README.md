@@ -28,4 +28,4 @@ mt = "markdown_tools.tools:main"
 ```
 
 Then change `mt` to the command of your choice. 
-(In this case, you will need to re-run `pip` to change the name).
+(In this case, you will need to re-run the above `pip` command to change the name).
