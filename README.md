@@ -10,7 +10,7 @@ To install:
 1. Open a command prompt and change to this project directory. Run this command:
 
 ```text
-> pip install -e .
+pip install -e .
 ```
 
 This performs a system-wide install from the current directory '.', and the
