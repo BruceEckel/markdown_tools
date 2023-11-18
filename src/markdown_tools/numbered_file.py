@@ -1,8 +1,7 @@
-# renumber_files.py
+# numbered_file.py
 # Uses dataclass ordering to sort, respecting the '!' in the
 # filename to mean that file should appear first if there's a conflict.
 # So '3.! foo.md' will renumber before '3. bar.md'
-import os
 import re
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -57,7 +56,11 @@ class NumberedFile:
         )
         for i, nf in enumerate(chapter_list):
             nf.new_name = f"{i}. {nf.text_name}"
-        changes = [nf for nf in chapter_list if nf.original_name != nf.new_name]
+        changes = [
+            nf
+            for nf in chapter_list
+            if nf.original_name != nf.new_name
+        ]
         return Result(chapter_list, changes)
 
     @classmethod
@@ -71,17 +74,12 @@ class NumberedFile:
         )
         for i, nf in enumerate(appendix_list):
             nf.original_name = "A" + nf.original_name
-            nf.new_name = f"A{i + 1}. {nf.text_name}"  # Start at A1 not A0
-        changes = [nf for nf in appendix_list if nf.original_name != nf.new_name]
+            nf.new_name = (
+                f"A{i + 1}. {nf.text_name}"  # Start at A1 not A0
+            )
+        changes = [
+            nf
+            for nf in appendix_list
+            if nf.original_name != nf.new_name
+        ]
         return Result(appendix_list, changes)
-
-
-if __name__ == "__main__":
-    for chapter in NumberedFile.chapters().files:
-        print(chapter)
-        # print(f"'{chapter.original_name}'  -->  '{chapter.new_name}'")
-        # os.rename(chapter.original_name, chapter.new_name)
-    for appendix in NumberedFile.appendices().files:
-        print(appendix)
-        # print(f"'{appendix.original_name}'  -->  '{appendix.new_name}'")
-        # os.rename(appendix.original_name, appendix.new_name)

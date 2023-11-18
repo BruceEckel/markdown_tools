@@ -6,7 +6,10 @@ import re
 
 
 def separator(id: str, sep_char: str = "-") -> str:
-    return f" {id} ".center(60, sep_char) + "\n"
+    BEGIN = 5
+    WIDTH = 50
+    start = f"{sep_char * BEGIN} {id}"
+    return start + f" {(WIDTH - len(start)) * sep_char}" + "\n"
 
 
 @dataclass
@@ -54,7 +57,9 @@ class SourceCodeListing:
         self.language = tagline[3:].strip()
         self.code = "".join(lines[1:-1])
 
-        assert self.language, f"Language cannot be empty in {self.original_code_block}"
+        assert (
+            self.language
+        ), f"Language cannot be empty in {self.original_code_block}"
 
         if self.ignore:
             return
@@ -67,7 +72,9 @@ class SourceCodeListing:
             case "go":
                 self._validate_filename(filename_line, "//", ".go")
 
-    def _validate_filename(self, line: str, comment: str, file_ext: str):
+    def _validate_filename(
+        self, line: str, comment: str, file_ext: str
+    ):
         assert line.startswith(comment) and line.endswith(
             file_ext
         ), f"First line must contain source file name in {self.original_code_block}"
@@ -77,7 +84,11 @@ class SourceCodeListing:
         def ignore_marker():
             return " !" if self.ignore else ""
 
-        return f"```{self.language}{ignore_marker()}\n" + "".join(self.code) + "```\n"
+        return (
+            f"```{self.language}{ignore_marker()}\n"
+            + "".join(self.code)
+            + "```\n"
+        )
 
     def __str__(self) -> str:
         return (
@@ -124,23 +135,31 @@ class MarkdownFile:
             if line.startswith("```"):
                 if in_code_block:  # Complete the code block
                     current_text.append(line)
-                    self.contents.append(SourceCodeListing("".join(current_text)))
+                    self.contents.append(
+                        SourceCodeListing("".join(current_text))
+                    )
                     current_text = []
                     in_code_block = False
                 else:  # Start a new code block
                     if current_text:
-                        self.contents.append(MarkdownText("".join(current_text)))
+                        self.contents.append(
+                            MarkdownText("".join(current_text))
+                        )
                         current_text = []
                     in_code_block = True
                     current_text.append(line)
             elif line.startswith("%%"):
                 if in_github_url:  # Complete the github URL
-                    self.contents.append(GitHubURL("".join(current_text).strip()))
+                    self.contents.append(
+                        GitHubURL("".join(current_text).strip())
+                    )
                     current_text = []
                     in_github_url = False
                 else:  # Start a new github URL
                     if current_text:
-                        self.contents.append(MarkdownText("".join(current_text)))
+                        self.contents.append(
+                            MarkdownText("".join(current_text))
+                        )
                         current_text = []
                     in_github_url = True
             elif in_github_url:
@@ -152,15 +171,25 @@ class MarkdownFile:
 
         if current_text:
             if in_github_url:
-                self.contents.append(GitHubURL("".join(current_text).strip()))
+                self.contents.append(
+                    GitHubURL("".join(current_text).strip())
+                )
             else:
-                self.contents.append(MarkdownText("".join(current_text)))
+                self.contents.append(
+                    MarkdownText("".join(current_text))
+                )
 
-    def __iter__(self) -> Iterator[MarkdownText | SourceCodeListing | GitHubURL]:
+    def __iter__(
+        self,
+    ) -> Iterator[MarkdownText | SourceCodeListing | GitHubURL]:
         return iter(self.contents)
 
     def code_listings(self) -> List[SourceCodeListing]:
-        return [part for part in self if isinstance(part, SourceCodeListing)]
+        return [
+            part
+            for part in self
+            if isinstance(part, SourceCodeListing)
+        ]
 
     def github_urls(self) -> List[GitHubURL]:
         return [part for part in self if isinstance(part, GitHubURL)]
