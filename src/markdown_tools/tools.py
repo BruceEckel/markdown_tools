@@ -14,6 +14,9 @@ from markdown_tools import (
 from pathlib import Path
 import platform
 
+clear_screen = "cls" if platform.system() == "Windows" else "clear"
+
+
 cli = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
@@ -111,15 +114,8 @@ def renumber(
     make_changes(appendix_changes)
 
 
-def clear_screen():
-    if platform.system() == "Windows":
-        os.system("cls")
-    else:
-        os.system("clear")
-
-
 def main():
-    clear_screen()
+    os.system(clear_screen)
     cli()
 
 
