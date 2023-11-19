@@ -17,6 +17,7 @@ def check_markdown(md: Path):
         return "OK"
     else:
         Path(md.name + ".mtmp").write_text(
-            "".join([repr(section) for section in markdown])
+            "".join([repr(section) for section in markdown]),
+            encoding="utf-8",
         )
         return "Not the same"
