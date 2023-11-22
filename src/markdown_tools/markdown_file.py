@@ -253,12 +253,16 @@ class MarkdownSourceText:
 
 @dataclass
 class MarkdownFile:
+    file_path: Path
     original_markdown: str
     contents: List[MarkdownText | SourceCodeListing | CodePath]
 
     def __init__(self, file_path: Path):
-        self.md_source = MarkdownSourceText(file_path)
-        self.original_markdown = file_path.read_text(encoding="utf-8")
+        self.file_path = file_path
+        self.md_source = MarkdownSourceText(self.file_path)
+        self.original_markdown = self.file_path.read_text(
+            encoding="utf-8"
+        )
         self.contents = list(
             MarkdownFile.parse(
                 self.original_markdown.splitlines(True)
