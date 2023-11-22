@@ -1,6 +1,7 @@
 #: markdown_file.py
 from dataclasses import dataclass
 from pathlib import Path
+from pprint import pprint
 from typing import Iterator, List, Tuple
 
 
@@ -90,6 +91,32 @@ class SourceCodeListing:
             case "text":
                 pass
 
+    @staticmethod
+    def parse(
+        source: List[str], start_line: int
+    ) -> Tuple["SourceCodeListing", int]:
+        code_block_start = start_line
+        code_lines = []
+        line_number = start_line + 1
+
+        # print(f"{line_number = }")
+        # print(f"{source[line_number] = }")
+
+        while (
+            line_number < len(source)
+            and source[line_number].strip() != "```"
+        ):
+            code_lines.append(source[line_number])
+            line_number += 1
+
+        if line_number >= len(source):
+            raise ValueError(
+                f"Unmatched code block starting at line {code_block_start}"
+            )
+
+        code_lines.append(source[line_number])  # Include closing ```
+        return SourceCodeListing("".join(code_lines)), line_number + 1
+
     def _validate_filename(
         self, line: str, comment: str, file_ext: str
     ):
@@ -116,52 +143,32 @@ class SourceCodeListing:
             + f"{self.language = } {self.ignore = }"
         )
 
-    @staticmethod
-    def parse(
-        source: List[str], start_line: int
-    ) -> Tuple["SourceCodeListing", int]:
-        code_block_start = start_line
-        code_block_type = source[start_line].strip()
-        code_lines = []
-        line_number = start_line + 1
-
-        while (
-            line_number < len(source)
-            and source[line_number].strip() != code_block_type
-        ):
-            code_lines.append(source[line_number])
-            line_number += 1
-
-        if line_number >= len(source):
-            raise ValueError(
-                f"Unmatched code block starting at line {code_block_start}"
-            )
-
-        # Include the closing ``` line:
-        code_lines.append(source[line_number])
-        line_number += 1
-
-        # if code_block_type.endswith("text"):
-        #     return MarkdownText("".join(code_lines)), line_number
-        # else:
-        return SourceCodeListing("".join(code_lines)), line_number
-
 
 @dataclass
 class CodePath:
     """
-    Contains a URL to a github repo, which is represented in
-    the markdown file as:
+    Contains a path to a directory containing code files.
+    Represented in the markdown file as:
     %%
-    code: URL
+    path: directory
     %%
-    Each one of these sets the URL for subsequent code listings.
+    Each one of these sets the directory for subsequent code listings.
     """
 
-    url: str
+    comment: List[str]
+    path: str | None = None
+
+    def __post_init__(self):
+        print(self)
+        pprint(self.comment)
+        print(f"[{self.comment[0]}]")
+        print(f"[{self.comment[-1]}]")
+        # assert self.comment[0] == "%%"  # and self.comment[-1] == "%%"
+        # assert self.comment[1].startswith("path:")
+        # print(f"{self}\nPASSED")
 
     def __repr__(self) -> str:
-        return f"%%\ncode: {self.url}\n%%\n"
+        return f"%%\ncode: {self.path}\n%%\n"
 
     def __str__(self) -> str:
         return separator("CodePath") + repr(self)
@@ -170,8 +177,15 @@ class CodePath:
     def parse(
         source: List[str], start_line: int
     ) -> Tuple["CodePath", int]:
-        url = source[start_line + 1].strip()
-        return CodePath(url), start_line + 2
+        comment: List[str] = [source[start_line]]
+        line_n = start_line + 1
+        while True:
+            comment.append(source[line_n])
+            line_n += 1
+            if comment[-1].strip() != "%%":
+                break
+
+        return CodePath(comment), line_n
 
 
 @dataclass
@@ -202,17 +216,17 @@ class MarkdownFile:
                 )
                 yield listing
             elif line.strip() == "%%":
-                if line_number + 1 < len(source) and source[
-                    line_number + 1
-                ].strip().startswith("code:"):
-                    code_path, line_number = CodePath.parse(
-                        source, line_number
-                    )
-                    yield code_path
-                else:
-                    raise ValueError(
-                        f"Invalid code path starting at line {line_number}"
-                    )
+                # if line_number + 1 < len(source) and source[
+                #     line_number + 1
+                # ].strip().startswith("code:"):
+                code_path, line_number = CodePath.parse(
+                    source, line_number
+                )
+                yield code_path
+            # else:
+            #     raise ValueError(
+            #         f"Invalid code path starting at line {line_number}"
+            #     )
             else:
                 markdown_text, line_number = MarkdownText.parse(
                     source, line_number
