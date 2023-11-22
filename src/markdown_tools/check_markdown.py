@@ -1,4 +1,4 @@
-# check_markdown.py
+#: check_markdown.py
 from io import StringIO
 from pathlib import Path
 from .markdown_file import MarkdownFile
@@ -6,7 +6,7 @@ from .markdown_file import MarkdownFile
 
 def check_markdown(md: Path):
     markdown = MarkdownFile(md)
-    for ghurl in markdown.github_urls():
+    for ghurl in markdown.code_paths():
         print(f"GitHubURL: {ghurl.url}")
     new_markdown = StringIO()
     new_markdown.write(

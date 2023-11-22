@@ -1,3 +1,4 @@
+#: tools.py
 """
 Tests and maintains Markdown files containing embedded code listings.
 """
@@ -42,8 +43,9 @@ def check(
         tmp_file.unlink()
 
     def _check(md: Path):
+        print(f"Checking {md.name}: ", end="")
         assert md.exists(), f"{md} does not exist"
-        print(f"{md.name}: [{check_markdown(md)}]")
+        print(f"[{check_markdown(md)}]")
 
     if filename:
         _check(Path(filename))

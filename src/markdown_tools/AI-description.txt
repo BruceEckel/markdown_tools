@@ -1,0 +1,28 @@
+In the repository https://github.com/BruceEckel/markdown_tools, 
+in the file src\markdown_tools\markdown_file.py, 
+
+
+In the following file, I would like to refactor
+the parser in the MarkdownFile constructor as follows:
+
+1. Add a generator function parse_markdown(source: List[str]) that takes
+a list of the lines from the original file, and yields 
+MarkdownText | SourceCodeListing | CodePath
+
+2. Assume there is no nesting of MarkdownText, SourceCodeListing, or CodePath within
+each other.
+
+3. parse_markdown keeps track of the line number it is processing. When it encounters 
+the beginning of a new type, it passes 'source' and the line number to the constructor for that
+type, which will absorb all the lines necessary to complete that type. That constructor will
+return a tuple containing the newly-created object of that type, and the new line number representing
+the next line of 'source' after the lines necessary to create that type. parse_markdown can
+then continue processing using the new line number.
+
+4. If a SourceCodeListing encounters either the end of the file or an opening 
+SourceCodeListing marker before a closing SourceCodeListing marker, report an error.
+
+5. If a CodePath encounters the end of the file before a closing Markdown comment marker, 
+report an error.
+
+Please provide the complete listing.

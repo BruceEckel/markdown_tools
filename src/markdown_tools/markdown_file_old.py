@@ -1,7 +1,8 @@
-#: markdown_file.py
+# markdown_file.py
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, List, Tuple
+from typing import Iterator, List
+import re
 
 
 def separator(id: str, sep_char: str = "-") -> str:
@@ -24,23 +25,6 @@ class MarkdownText:
 
     def __str__(self) -> str:
         return separator("MarkdownText") + repr(self)
-
-    @staticmethod
-    def parse(
-        source: List[str], start_line: int
-    ) -> Tuple["MarkdownText", int]:
-        text_lines = []
-        line_number = start_line
-
-        while (
-            line_number < len(source)
-            and not source[line_number].startswith("```")
-            and source[line_number].strip() != "%%"
-        ):
-            text_lines.append(source[line_number])
-            line_number += 1
-
-        return MarkdownText("".join(text_lines)), line_number
 
 
 @dataclass
@@ -87,8 +71,6 @@ class SourceCodeListing:
                 self._validate_filename(filename_line, "//", ".rs")
             case "go":
                 self._validate_filename(filename_line, "//", ".go")
-            case "text":
-                pass
 
     def _validate_filename(
         self, line: str, comment: str, file_ext: str
@@ -116,36 +98,6 @@ class SourceCodeListing:
             + f"{self.language = } {self.ignore = }"
         )
 
-    @staticmethod
-    def parse(
-        source: List[str], start_line: int
-    ) -> Tuple["SourceCodeListing", int]:
-        code_block_start = start_line
-        code_block_type = source[start_line].strip()
-        code_lines = []
-        line_number = start_line + 1
-
-        while (
-            line_number < len(source)
-            and source[line_number].strip() != code_block_type
-        ):
-            code_lines.append(source[line_number])
-            line_number += 1
-
-        if line_number >= len(source):
-            raise ValueError(
-                f"Unmatched code block starting at line {code_block_start}"
-            )
-
-        # Include the closing ``` line:
-        code_lines.append(source[line_number])
-        line_number += 1
-
-        # if code_block_type.endswith("text"):
-        #     return MarkdownText("".join(code_lines)), line_number
-        # else:
-        return SourceCodeListing("".join(code_lines)), line_number
-
 
 @dataclass
 class CodePath:
@@ -166,13 +118,6 @@ class CodePath:
     def __str__(self) -> str:
         return separator("CodePath") + repr(self)
 
-    @staticmethod
-    def parse(
-        source: List[str], start_line: int
-    ) -> Tuple["CodePath", int]:
-        url = source[start_line + 1].strip()
-        return CodePath(url), start_line + 2
-
 
 @dataclass
 class MarkdownFile:
@@ -181,43 +126,58 @@ class MarkdownFile:
 
     def __init__(self, file_path: Path):
         self.original_markdown = file_path.read_text(encoding="utf-8")
-        self.contents = list(
-            MarkdownFile.parse(
-                self.original_markdown.splitlines(True)
-            )
-        )
+        self.contents = []
+        current_text: List[str] = []
+        in_code_block = False
+        in_github_url = False
 
-    @staticmethod
-    def parse(
-        source: List[str],
-    ) -> Iterator[MarkdownText | SourceCodeListing | CodePath]:
-        line_number = 0
-
-        while line_number < len(source):
-            line = source[line_number]
-
+        for line in self.original_markdown.splitlines(True):
             if line.startswith("```"):
-                listing, line_number = SourceCodeListing.parse(
-                    source, line_number
-                )
-                yield listing
-            elif line.strip() == "%%":
-                if line_number + 1 < len(source) and source[
-                    line_number + 1
-                ].strip().startswith("code:"):
-                    code_path, line_number = CodePath.parse(
-                        source, line_number
+                if in_code_block:  # Complete the code block
+                    current_text.append(line)
+                    self.contents.append(
+                        SourceCodeListing("".join(current_text))
                     )
-                    yield code_path
-                else:
-                    raise ValueError(
-                        f"Invalid code path starting at line {line_number}"
+                    current_text = []
+                    in_code_block = False
+                else:  # Start a new code block
+                    if current_text:
+                        self.contents.append(
+                            MarkdownText("".join(current_text))
+                        )
+                        current_text = []
+                    in_code_block = True
+                    current_text.append(line)
+            elif line.startswith("%%"):
+                if in_github_url:  # Complete the github URL
+                    self.contents.append(
+                        CodePath("".join(current_text).strip())
                     )
+                    current_text = []
+                    in_github_url = False
+                else:  # Start a new github URL
+                    if current_text:
+                        self.contents.append(
+                            MarkdownText("".join(current_text))
+                        )
+                        current_text = []
+                    in_github_url = True
+            elif in_github_url:
+                url_match = re.search(r"code:\s*(.*)", line)
+                if url_match:
+                    current_text.append(url_match.group(1).strip())
             else:
-                markdown_text, line_number = MarkdownText.parse(
-                    source, line_number
+                current_text.append(line)
+
+        if current_text:
+            if in_github_url:
+                self.contents.append(
+                    CodePath("".join(current_text).strip())
                 )
-                yield markdown_text
+            else:
+                self.contents.append(
+                    MarkdownText("".join(current_text))
+                )
 
     def __iter__(
         self,
@@ -231,5 +191,5 @@ class MarkdownFile:
             if isinstance(part, SourceCodeListing)
         ]
 
-    def code_paths(self) -> List[CodePath]:
+    def github_urls(self) -> List[CodePath]:
         return [part for part in self if isinstance(part, CodePath)]
