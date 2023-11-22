@@ -7,7 +7,7 @@ from .markdown_file import MarkdownFile
 def check_markdown(md: Path):
     markdown = MarkdownFile(md)
     for code_path in markdown.code_paths():
-        print(f"code path: {code_path.path}")
+        print(f"path: {code_path.path}")
     new_markdown = StringIO()
     new_markdown.write(
         "".join([repr(section) for section in markdown])

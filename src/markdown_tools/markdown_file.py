@@ -1,8 +1,8 @@
 #: markdown_file.py
 from dataclasses import dataclass
 from pathlib import Path
-from pprint import pprint
 from typing import Iterator, List, Tuple
+import typer
 
 
 def separator(id: str, sep_char: str = "-") -> str:
@@ -10,6 +10,11 @@ def separator(id: str, sep_char: str = "-") -> str:
     WIDTH = 50
     start = f"{sep_char * BEGIN} {id}"
     return start + f" {(WIDTH - len(start)) * sep_char}" + "\n"
+
+
+def abort(condition: bool, msg: str):
+    if condition:
+        raise typer.Exit(msg)  # type: ignore
 
 
 @dataclass
@@ -95,25 +100,25 @@ class SourceCodeListing:
     def parse(
         source: List[str], start_line: int
     ) -> Tuple["SourceCodeListing", int]:
-        code_block_start = start_line
-        code_lines = []
-        line_number = start_line + 1
+        code_lines: List[str] = [source[start_line]]
+        line_number: int = start_line + 1
 
-        # print(f"{line_number = }")
-        # print(f"{source[line_number] = }")
+        def _abort(condition: bool):
+            abort(
+                condition,
+                f"Unclosed code block starting at line {start_line}",
+            )
 
         while (
             line_number < len(source)
             and source[line_number].strip() != "```"
         ):
+            # Means there's more after the ```:
+            _abort(source[line_number].startswith("```"))
             code_lines.append(source[line_number])
             line_number += 1
 
-        if line_number >= len(source):
-            raise ValueError(
-                f"Unmatched code block starting at line {code_block_start}"
-            )
-
+        _abort(line_number >= len(source))
         code_lines.append(source[line_number])  # Include closing ```
         return SourceCodeListing("".join(code_lines)), line_number + 1
 
@@ -156,36 +161,77 @@ class CodePath:
     """
 
     comment: List[str]
+    start_line: int
     path: str | None = None
 
     def __post_init__(self):
-        print(self)
-        pprint(self.comment)
-        print(f"[{self.comment[0]}]")
-        print(f"[{self.comment[-1]}]")
-        # assert self.comment[0] == "%%"  # and self.comment[-1] == "%%"
-        # assert self.comment[1].startswith("path:")
-        # print(f"{self}\nPASSED")
+        if not self.comment[1].startswith("path:"):
+            raise typer.Exit(
+                f"\nError: line {self.start_line}\nMissing 'path:' in:\n{self}"
+            )
+        self.path = self.comment[1].lstrip("path:").strip()
 
     def __repr__(self) -> str:
-        return f"%%\ncode: {self.path}\n%%\n"
+        return f"%%\n{self.comment[1]}\n%%\n"
 
     def __str__(self) -> str:
-        return separator("CodePath") + repr(self)
+        return "\n" + separator("CodePath") + repr(self)
 
     @staticmethod
     def parse(
         source: List[str], start_line: int
     ) -> Tuple["CodePath", int]:
-        comment: List[str] = [source[start_line]]
+        comment: List[str] = [source[start_line].rstrip()]
         line_n = start_line + 1
         while True:
-            comment.append(source[line_n])
+            comment.append(source[line_n].rstrip())
             line_n += 1
-            if comment[-1].strip() != "%%":
+            if comment[-1] == "%%":
                 break
 
-        return CodePath(comment), line_n
+        return CodePath(comment, start_line), line_n
+
+
+@dataclass
+class MDSourceText:
+    """
+    Delivers the markdown file a line at a time.
+    Keeps track of the current line.
+    Knows the Path of the file, for use in error messages.
+    """
+
+    file_path: Path
+    original_markdown: str = ""
+    lines: List[str] | None = None
+    current_line: int = 0
+
+    def __post_init__(self):
+        abort(
+            not self.file_path.exists(),
+            f"ERROR: [{self.file_path}] does not exist",
+        )
+        abort(
+            self.file_path.is_dir(),
+            f"ERROR: [{self.file_path}] is a directory",
+        )
+        abort(
+            self.file_path.suffix != ".md",
+            f"ERROR: [{self.file_path}] does not end with '.md'",
+        )
+        self.original_markdown = self.file_path.read_text(
+            encoding="utf-8"
+        )
+        self.lines = self.original_markdown.splitlines(True)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current_line >= len(self.lines):
+            raise StopIteration
+        line = self.lines[self.current_line]
+        self.current_line += 1
+        return line
 
 
 @dataclass
@@ -216,17 +262,10 @@ class MarkdownFile:
                 )
                 yield listing
             elif line.strip() == "%%":
-                # if line_number + 1 < len(source) and source[
-                #     line_number + 1
-                # ].strip().startswith("code:"):
                 code_path, line_number = CodePath.parse(
                     source, line_number
                 )
                 yield code_path
-            # else:
-            #     raise ValueError(
-            #         f"Invalid code path starting at line {line_number}"
-            #     )
             else:
                 markdown_text, line_number = MarkdownText.parse(
                     source, line_number

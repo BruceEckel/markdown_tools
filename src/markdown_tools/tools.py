@@ -43,7 +43,7 @@ def check(
         tmp_file.unlink()
 
     def _check(md: Path):
-        print(f"Checking {md.name}: ", end="")
+        print(f"Checking {md.name}")
         assert md.exists(), f"{md} does not exist"
         print(f"[{check_markdown(md)}]")
 
