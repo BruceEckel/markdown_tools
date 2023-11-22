@@ -2,7 +2,7 @@
 from .markdown_file import (  # noqa: F401
     MarkdownText,
     SourceCodeListing,
-    GitHubURL,
+    CodePath,
     MarkdownFile,
     separator,
 )

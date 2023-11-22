@@ -4,7 +4,7 @@ from markdown_tools import (
     separator,
     MarkdownText,
     SourceCodeListing,
-    GitHubURL,
+    CodePath,
     MarkdownFile,
 )
 from pathlib import Path
@@ -38,7 +38,7 @@ def test_source_code_listing_python():
 
 # Tests for GitHubURL
 def test_github_url_repr():
-    url = GitHubURL("https://github.com/example/repo")
+    url = CodePath("https://github.com/example/repo")
     assert (
         repr(url) == "%%\ncode: https://github.com/example/repo\n%%\n"
     )
@@ -58,7 +58,7 @@ def test_markdown_file_parsing():
     assert len(markdown_file.contents) == 3
     assert isinstance(markdown_file.contents[0], MarkdownText)
     assert isinstance(markdown_file.contents[1], SourceCodeListing)
-    assert isinstance(markdown_file.contents[2], GitHubURL)
+    assert isinstance(markdown_file.contents[2], CodePath)
 
     # Cleanup
     file_path.unlink()

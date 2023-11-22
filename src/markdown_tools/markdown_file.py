@@ -100,7 +100,7 @@ class SourceCodeListing:
 
 
 @dataclass
-class GitHubURL:
+class CodePath:
     """
     Contains a URL to a github repo, which is represented in
     the markdown file as:
@@ -122,7 +122,7 @@ class GitHubURL:
 @dataclass
 class MarkdownFile:
     original_markdown: str
-    contents: List[MarkdownText | SourceCodeListing | GitHubURL]
+    contents: List[MarkdownText | SourceCodeListing | CodePath]
 
     def __init__(self, file_path: Path):
         self.original_markdown = file_path.read_text(encoding="utf-8")
@@ -151,7 +151,7 @@ class MarkdownFile:
             elif line.startswith("%%"):
                 if in_github_url:  # Complete the github URL
                     self.contents.append(
-                        GitHubURL("".join(current_text).strip())
+                        CodePath("".join(current_text).strip())
                     )
                     current_text = []
                     in_github_url = False
@@ -172,7 +172,7 @@ class MarkdownFile:
         if current_text:
             if in_github_url:
                 self.contents.append(
-                    GitHubURL("".join(current_text).strip())
+                    CodePath("".join(current_text).strip())
                 )
             else:
                 self.contents.append(
@@ -181,7 +181,7 @@ class MarkdownFile:
 
     def __iter__(
         self,
-    ) -> Iterator[MarkdownText | SourceCodeListing | GitHubURL]:
+    ) -> Iterator[MarkdownText | SourceCodeListing | CodePath]:
         return iter(self.contents)
 
     def code_listings(self) -> List[SourceCodeListing]:
@@ -191,5 +191,5 @@ class MarkdownFile:
             if isinstance(part, SourceCodeListing)
         ]
 
-    def github_urls(self) -> List[GitHubURL]:
-        return [part for part in self if isinstance(part, GitHubURL)]
+    def github_urls(self) -> List[CodePath]:
+        return [part for part in self if isinstance(part, CodePath)]
