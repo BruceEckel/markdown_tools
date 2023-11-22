@@ -1,5 +1,5 @@
 #: markdown_file.py
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, List, Tuple
 import typer
@@ -193,7 +193,7 @@ class CodePath:
 
 
 @dataclass
-class MDSourceText:
+class MarkdownSourceText:
     """
     Delivers the markdown file a line at a time.
     Keeps track of the current line.
@@ -202,36 +202,53 @@ class MDSourceText:
 
     file_path: Path
     original_markdown: str = ""
-    lines: List[str] | None = None
+    lines: List[str] = field(default_factory=list)
     current_line: int = 0
+    start_of_block: int = 0  # For error messages
+
+    @staticmethod
+    def _abort(condition: bool, msg: str):
+        if condition:
+            raise typer.Exit("ERROR in {self.file_path}: " + msg)  # type: ignore
 
     def __post_init__(self):
-        abort(
-            not self.file_path.exists(),
-            f"ERROR: [{self.file_path}] does not exist",
-        )
-        abort(
-            self.file_path.is_dir(),
-            f"ERROR: [{self.file_path}] is a directory",
-        )
-        abort(
-            self.file_path.suffix != ".md",
-            f"ERROR: [{self.file_path}] does not end with '.md'",
+        self._abort(not self.file_path.exists(), "does not exist")
+        self._abort(self.file_path.is_dir(), "is a directory")
+        self._abort(
+            self.file_path.suffix != ".md", "does not end with '.md'"
         )
         self.original_markdown = self.file_path.read_text(
             encoding="utf-8"
         )
         self.lines = self.original_markdown.splitlines(True)
+        # print(f"OK: {self.file_path.name}")
+        # print(f"[{self.lines[0] = }]")
+        # print(f"[{self.lines[-2] = }]")
 
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> str:
         if self.current_line >= len(self.lines):
             raise StopIteration
         line = self.lines[self.current_line]
         self.current_line += 1
         return line
+
+    def __bool__(self) -> bool:
+        return self.current_line < len(self.lines)
+
+    def new_block(self) -> "MarkdownSourceText":
+        """
+        Call when passing a MarkdownSourceText to a parser function.
+        Sets the start_of_block line number to use in error messages.
+        """
+        self.start_of_block = self.current_line
+        return self
+
+    def abort(self, condition: bool, msg: str):
+        start_err = f" at line {self.start_of_block}:\n"
+        self._abort(condition, start_err + msg)
 
 
 @dataclass
@@ -240,6 +257,7 @@ class MarkdownFile:
     contents: List[MarkdownText | SourceCodeListing | CodePath]
 
     def __init__(self, file_path: Path):
+        self.md_source = MarkdownSourceText(file_path)
         self.original_markdown = file_path.read_text(encoding="utf-8")
         self.contents = list(
             MarkdownFile.parse(
