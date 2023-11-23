@@ -7,7 +7,7 @@ from .markdown_file import MarkdownFile
 def check_markdown(md: Path):
     markdown = MarkdownFile(md)
     for code_path in markdown.code_paths():
-        print(f"path: {code_path.path}")
+        print(f"\npath: {code_path.path}")
 
     # Regenerate markdown file into memory:
     new_markdown = StringIO()

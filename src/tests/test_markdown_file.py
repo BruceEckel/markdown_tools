@@ -2,7 +2,7 @@
 import pytest
 from markdown_tools import (
     separator,
-    MarkdownText,
+    MarkdownBlock,
     SourceCodeListing,
     CodePath,
     MarkdownFile,
@@ -12,12 +12,12 @@ from pathlib import Path
 
 # Tests for MarkdownText
 def test_markdown_text_repr():
-    text = MarkdownText("Example text")
+    text = MarkdownBlock("Example text")
     assert repr(text) == "Example text"
 
 
 def test_markdown_text_str():
-    text = MarkdownText("Example text")
+    text = MarkdownBlock("Example text")
     assert "MarkdownText" in str(text)
     assert "Example text" in str(text)
 
@@ -56,7 +56,7 @@ def test_markdown_file_parsing():
     markdown_file = MarkdownFile(file_path)
 
     assert len(markdown_file.contents) == 3
-    assert isinstance(markdown_file.contents[0], MarkdownText)
+    assert isinstance(markdown_file.contents[0], MarkdownBlock)
     assert isinstance(markdown_file.contents[1], SourceCodeListing)
     assert isinstance(markdown_file.contents[2], CodePath)
 

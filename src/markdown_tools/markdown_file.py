@@ -1,7 +1,7 @@
 #: markdown_file.py
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List, Tuple
+from typing import Iterator, List
 import typer
 
 
@@ -12,17 +12,74 @@ def separator(id: str, sep_char: str = "-") -> str:
     return start + f" {(WIDTH - len(start)) * sep_char}" + "\n"
 
 
-def abort(condition: bool, msg: str):
-    if condition:
+def assert_true(condition: bool, msg: str):
+    if not condition:
         raise typer.Exit(msg)  # type: ignore
 
 
 @dataclass
-class MarkdownText:
+class MarkdownSourceText:
+    """
+    Delivers the markdown file a line at a time.
+    Keeps track of the current line.
+    Knows the Path of the file, for use in error messages.
+    """
+
+    file_path: Path
+    original_markdown: str = ""
+    lines: List[str] = field(default_factory=list)
+    current_line_number: int = 0
+    start_of_block: int = 0  # For error messages
+
+    def _assert_true(self, condition: bool, msg: str):
+        assert_true(condition, f"ERROR in {self.file_path}: " + msg)
+
+    def __post_init__(self):
+        self._assert_true(self.file_path.exists(), "does not exist")
+        self._assert_true(
+            not self.file_path.is_dir(), "is a directory"
+        )
+        self._assert_true(
+            self.file_path.suffix == ".md", "does not end with '.md'"
+        )
+        self.original_markdown = self.file_path.read_text(
+            encoding="utf-8"
+        )
+        self.lines = self.original_markdown.splitlines(True)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> str:
+        if self.current_line_number >= len(self.lines):
+            raise StopIteration
+        line = self.lines[self.current_line_number]
+        self.current_line_number += 1
+        return line
+
+    def __bool__(self) -> bool:
+        return self.current_line_number < len(self.lines)
+
+    def current_line(self) -> str | None:
+        """
+        Produce the current line.
+        """
+        if self.current_line_number >= len(self.lines):
+            return None
+        return self.lines[self.current_line_number]
+
+    def assert_true(self, condition: bool, msg: str):
+        start_err = f" at line {self.start_of_block}:\n"
+        self._assert_true(condition, start_err + msg)
+
+
+@dataclass
+class MarkdownBlock:
     """
     Contains a section of normal markdown text
     """
 
+    md_source: MarkdownSourceText
     text: str
 
     def __repr__(self) -> str:
@@ -33,20 +90,19 @@ class MarkdownText:
 
     @staticmethod
     def parse(
-        source: List[str], start_line: int
-    ) -> Tuple["MarkdownText", int]:
-        text_lines = []
-        line_number = start_line
+        md_source: MarkdownSourceText,
+    ) -> "MarkdownBlock":
+        # We know the current line is good:
+        text_lines = [next(md_source)]
 
-        while (
-            line_number < len(source)
-            and not source[line_number].startswith("```")
-            and source[line_number].strip() != "%%"
-        ):
-            text_lines.append(source[line_number])
-            line_number += 1
+        while md_source.current_line():
+            if md_source.current_line().startswith(
+                "```"
+            ) or md_source.current_line().startswith("%%"):
+                break
+            text_lines.append(next(md_source))
 
-        return MarkdownText("".join(text_lines)), line_number
+        return MarkdownBlock(md_source, "".join(text_lines))
 
 
 @dataclass
@@ -79,9 +135,10 @@ class SourceCodeListing:
         self.language = tagline[3:].strip()
         self.code = "".join(lines[1:-1])
 
-        assert (
-            self.language
-        ), f"Language cannot be empty in {self.original_code_block}"
+        assert_true(
+            self.language,
+            f"Language cannot be empty in {self.original_code_block}",
+        )
 
         if self.ignore:
             return
@@ -96,32 +153,6 @@ class SourceCodeListing:
             case "text":
                 pass
 
-    @staticmethod
-    def parse(
-        source: List[str], start_line: int
-    ) -> Tuple["SourceCodeListing", int]:
-        code_lines: List[str] = [source[start_line]]
-        line_number: int = start_line + 1
-
-        def _abort(condition: bool):
-            abort(
-                condition,
-                f"Unclosed code block starting at line {start_line}",
-            )
-
-        while (
-            line_number < len(source)
-            and source[line_number].strip() != "```"
-        ):
-            # Means there's more after the ```:
-            _abort(source[line_number].startswith("```"))
-            code_lines.append(source[line_number])
-            line_number += 1
-
-        _abort(line_number >= len(source))
-        code_lines.append(source[line_number])  # Include closing ```
-        return SourceCodeListing("".join(code_lines)), line_number + 1
-
     def _validate_filename(
         self, line: str, comment: str, file_ext: str
     ):
@@ -129,6 +160,31 @@ class SourceCodeListing:
             file_ext
         ), f"First line must contain source file name in {self.original_code_block}"
         self.source_file_name = line[len(comment) :].strip()
+
+    @staticmethod
+    def parse(
+        md_source: MarkdownSourceText,
+    ) -> "SourceCodeListing":
+        code_lines: List[str] = [next(md_source)]
+
+        def _assert_true(condition: bool):
+            assert_true(
+                condition,
+                f"Unclosed code block starting at line {md_source.start_of_block}",
+            )
+
+        while (
+            md_source.current_line()
+            and md_source.current_line().strip() != "```"
+        ):
+            # Means there's more on the line after the ```:
+            _assert_true(
+                not md_source.current_line().startswith("```")
+            )
+            code_lines.append(next(md_source))
+
+        code_lines.append(next(md_source))  # Include closing ```
+        return SourceCodeListing("".join(code_lines))
 
     def __repr__(self) -> str:
         def ignore_marker():
@@ -160,15 +216,15 @@ class CodePath:
     Each one of these sets the directory for subsequent code listings.
     """
 
+    md_source: MarkdownSourceText
     comment: List[str]
-    start_line: int
     path: str | None = None
 
     def __post_init__(self):
-        if not self.comment[1].startswith("path:"):
-            raise typer.Exit(
-                f"\nError: line {self.start_line}\nMissing 'path:' in:\n{self}"
-            )
+        self.md_source.assert_true(
+            self.comment[1].startswith("path:"),
+            f"Missing 'path:' in:\n{self}",
+        )
         self.path = self.comment[1].lstrip("path:").strip()
 
     def __repr__(self) -> str:
@@ -179,124 +235,46 @@ class CodePath:
 
     @staticmethod
     def parse(
-        source: List[str], start_line: int
-    ) -> Tuple["CodePath", int]:
-        comment: List[str] = [source[start_line].rstrip()]
-        line_n = start_line + 1
+        md_source: MarkdownSourceText,
+    ) -> "CodePath":
+        comment: List[str] = [next(md_source).rstrip()]  # Initial %%
         while True:
-            comment.append(source[line_n].rstrip())
-            line_n += 1
-            if comment[-1] == "%%":
+            comment.append(next(md_source).rstrip())
+            if comment[-1] == "%%":  # Closing comment marker
                 break
+            md_source.assert_true(
+                md_source.current_line(), "Unclosed markdown comment"
+            )
 
-        return CodePath(comment, start_line), line_n
-
-
-@dataclass
-class MarkdownSourceText:
-    """
-    Delivers the markdown file a line at a time.
-    Keeps track of the current line.
-    Knows the Path of the file, for use in error messages.
-    """
-
-    file_path: Path
-    original_markdown: str = ""
-    lines: List[str] = field(default_factory=list)
-    current_line: int = 0
-    start_of_block: int = 0  # For error messages
-
-    @staticmethod
-    def _abort(condition: bool, msg: str):
-        if condition:
-            raise typer.Exit("ERROR in {self.file_path}: " + msg)  # type: ignore
-
-    def __post_init__(self):
-        self._abort(not self.file_path.exists(), "does not exist")
-        self._abort(self.file_path.is_dir(), "is a directory")
-        self._abort(
-            self.file_path.suffix != ".md", "does not end with '.md'"
-        )
-        self.original_markdown = self.file_path.read_text(
-            encoding="utf-8"
-        )
-        self.lines = self.original_markdown.splitlines(True)
-        # print(f"OK: {self.file_path.name}")
-        # print(f"[{self.lines[0] = }]")
-        # print(f"[{self.lines[-2] = }]")
-
-    def __iter__(self):
-        return self
-
-    def __next__(self) -> str:
-        if self.current_line >= len(self.lines):
-            raise StopIteration
-        line = self.lines[self.current_line]
-        self.current_line += 1
-        return line
-
-    def __bool__(self) -> bool:
-        return self.current_line < len(self.lines)
-
-    def new_block(self) -> "MarkdownSourceText":
-        """
-        Call when passing a MarkdownSourceText to a parser function.
-        Sets the start_of_block line number to use in error messages.
-        """
-        self.start_of_block = self.current_line
-        return self
-
-    def abort(self, condition: bool, msg: str):
-        start_err = f" at line {self.start_of_block}:\n"
-        self._abort(condition, start_err + msg)
+        return CodePath(md_source, comment)
 
 
 @dataclass
 class MarkdownFile:
     file_path: Path
-    original_markdown: str
-    contents: List[MarkdownText | SourceCodeListing | CodePath]
+    md_source: MarkdownSourceText
+    contents: List[MarkdownBlock | SourceCodeListing | CodePath]
 
     def __init__(self, file_path: Path):
         self.file_path = file_path
         self.md_source = MarkdownSourceText(self.file_path)
-        self.original_markdown = self.file_path.read_text(
-            encoding="utf-8"
-        )
-        self.contents = list(
-            MarkdownFile.parse(
-                self.original_markdown.splitlines(True)
-            )
-        )
+        self.contents = list(MarkdownFile.parse(self.md_source))
 
     @staticmethod
     def parse(
-        source: List[str],
-    ) -> Iterator[MarkdownText | SourceCodeListing | CodePath]:
-        line_number = 0
-
-        while line_number < len(source):
-            line = source[line_number]
-
-            if line.startswith("```"):
-                listing, line_number = SourceCodeListing.parse(
-                    source, line_number
-                )
-                yield listing
-            elif line.strip() == "%%":
-                code_path, line_number = CodePath.parse(
-                    source, line_number
-                )
-                yield code_path
+        markdown_source: MarkdownSourceText,
+    ) -> Iterator[MarkdownBlock | SourceCodeListing | CodePath]:
+        while current_line := markdown_source.current_line():
+            if current_line.startswith("```"):
+                yield SourceCodeListing.parse(markdown_source)
+            elif current_line.startswith("%%"):
+                yield CodePath.parse(markdown_source)
             else:
-                markdown_text, line_number = MarkdownText.parse(
-                    source, line_number
-                )
-                yield markdown_text
+                yield MarkdownBlock.parse(markdown_source)
 
     def __iter__(
         self,
-    ) -> Iterator[MarkdownText | SourceCodeListing | CodePath]:
+    ) -> Iterator[MarkdownBlock | SourceCodeListing | CodePath]:
         return iter(self.contents)
 
     def code_listings(self) -> List[SourceCodeListing]:
