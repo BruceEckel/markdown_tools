@@ -7,9 +7,9 @@ the parser in the MarkdownFile constructor as follows:
 
 1. Add a generator function parse_markdown(source: List[str]) that takes
 a list of the lines from the original file, and yields 
-MarkdownText | SourceCodeListing | CodePath
+MarkdownText | SourceCode | CodePath
 
-2. Assume there is no nesting of MarkdownText, SourceCodeListing, or CodePath within
+2. Assume there is no nesting of MarkdownText, SourceCode, or CodePath within
 each other.
 
 3. parse_markdown keeps track of the line number it is processing. When it encounters 
@@ -19,8 +19,8 @@ return a tuple containing the newly-created object of that type, and the new lin
 the next line of 'source' after the lines necessary to create that type. parse_markdown can
 then continue processing using the new line number.
 
-4. If a SourceCodeListing encounters either the end of the file or an opening 
-SourceCodeListing marker before a closing SourceCodeListing marker, report an error.
+4. If a SourceCode encounters either the end of the file or an opening 
+SourceCode marker before a closing SourceCode marker, report an error.
 
 5. If a CodePath encounters the end of the file before a closing Markdown comment marker, 
 report an error.

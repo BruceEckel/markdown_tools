@@ -101,7 +101,7 @@ class MarkdownBlock:
 
 
 @dataclass
-class SourceCodeListing:
+class SourceCode:
     """
     Contains a single source-code listing:
     A.  All listings begin and end with ``` markers.
@@ -160,7 +160,7 @@ class SourceCodeListing:
     @staticmethod
     def parse(
         md_source: MarkdownSourceText,
-    ) -> "SourceCodeListing":
+    ) -> "SourceCode":
         code_lines: List[str] = [next(md_source)]
 
         while line := md_source.current_line():
@@ -173,7 +173,7 @@ class SourceCodeListing:
                 )
                 break
 
-        return SourceCodeListing("".join(code_lines), md_source)
+        return SourceCode("".join(code_lines), md_source)
 
     def __repr__(self) -> str:
         def ignore_marker():
@@ -187,7 +187,7 @@ class SourceCodeListing:
 
     def __str__(self) -> str:
         return (
-            separator("SourceCodeListing")
+            separator("SourceCode")
             + repr(self)
             + f"{self.source_file_name = }\n"
             + f"{self.language = } {self.ignore = }"
@@ -243,7 +243,7 @@ class CodePath:
 class MarkdownFile:
     file_path: Path
     md_source: MarkdownSourceText
-    contents: List[MarkdownBlock | SourceCodeListing | CodePath]
+    contents: List[MarkdownBlock | SourceCode | CodePath]
 
     def __init__(self, file_path: Path):
         self.file_path = file_path
@@ -253,11 +253,11 @@ class MarkdownFile:
     @staticmethod
     def parse(
         md_source: MarkdownSourceText,
-    ) -> Iterator[MarkdownBlock | SourceCodeListing | CodePath]:
+    ) -> Iterator[MarkdownBlock | SourceCode | CodePath]:
         while current_line := md_source.current_line():
             match current_line:
                 case line if line.startswith("```"):
-                    yield SourceCodeListing.parse(md_source)
+                    yield SourceCode.parse(md_source)
                 case line if line.startswith("%%"):
                     yield CodePath.parse(md_source)
                 case _:
@@ -265,15 +265,11 @@ class MarkdownFile:
 
     def __iter__(
         self,
-    ) -> Iterator[MarkdownBlock | SourceCodeListing | CodePath]:
+    ) -> Iterator[MarkdownBlock | SourceCode | CodePath]:
         return iter(self.contents)
 
-    def code_listings(self) -> List[SourceCodeListing]:
-        return [
-            part
-            for part in self
-            if isinstance(part, SourceCodeListing)
-        ]
+    def code_listings(self) -> List[SourceCode]:
+        return [part for part in self if isinstance(part, SourceCode)]
 
     def code_paths(self) -> List[CodePath]:
         return [part for part in self if isinstance(part, CodePath)]

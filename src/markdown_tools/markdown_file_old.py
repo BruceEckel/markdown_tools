@@ -28,7 +28,7 @@ class MarkdownText:
 
 
 @dataclass
-class SourceCodeListing:
+class SourceCode:
     """
     Contains a single source-code listing:
     A.  All listings begin and end with ``` markers.
@@ -92,7 +92,7 @@ class SourceCodeListing:
 
     def __str__(self) -> str:
         return (
-            separator("SourceCodeListing")
+            separator("SourceCode")
             + repr(self)
             + f"{self.source_file_name = }\n"
             + f"{self.language = } {self.ignore = }"
@@ -122,7 +122,7 @@ class CodePath:
 @dataclass
 class MarkdownFile:
     original_markdown: str
-    contents: List[MarkdownText | SourceCodeListing | CodePath]
+    contents: List[MarkdownText | SourceCode | CodePath]
 
     def __init__(self, file_path: Path):
         self.original_markdown = file_path.read_text(encoding="utf-8")
@@ -136,7 +136,7 @@ class MarkdownFile:
                 if in_code_block:  # Complete the code block
                     current_text.append(line)
                     self.contents.append(
-                        SourceCodeListing("".join(current_text))
+                        SourceCode("".join(current_text))
                     )
                     current_text = []
                     in_code_block = False
@@ -181,15 +181,11 @@ class MarkdownFile:
 
     def __iter__(
         self,
-    ) -> Iterator[MarkdownText | SourceCodeListing | CodePath]:
+    ) -> Iterator[MarkdownText | SourceCode | CodePath]:
         return iter(self.contents)
 
-    def code_listings(self) -> List[SourceCodeListing]:
-        return [
-            part
-            for part in self
-            if isinstance(part, SourceCodeListing)
-        ]
+    def code_listings(self) -> List[SourceCode]:
+        return [part for part in self if isinstance(part, SourceCode)]
 
     def github_urls(self) -> List[CodePath]:
         return [part for part in self if isinstance(part, CodePath)]

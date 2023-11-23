@@ -3,7 +3,7 @@ from markdown_tools.markdown_file import MarkdownSourceText
 from pathlib import Path
 from markdown_tools.markdown_file import MarkdownFile
 from markdown_tools.markdown_file import MarkdownBlock
-from markdown_tools.markdown_file import SourceCodeListing
+from markdown_tools.markdown_file import SourceCode
 from markdown_tools.markdown_file import CodePath
 
 
@@ -28,7 +28,7 @@ class TestParse:
     #     ]
     #     parsed_contents = list(MarkdownFile.parse(md_source))
     #     assert len(parsed_contents) == 1
-    #     assert isinstance(parsed_contents[0], SourceCodeListing)
+    #     assert isinstance(parsed_contents[0], SourceCode)
     #     assert parsed_contents[0].language == "python"
     #     assert parsed_contents[0].code == "print('Hello, World!')"
 
@@ -70,6 +70,6 @@ class TestParse:
     #     md_source.lines = ["```", "print('Hello, World!')", "```"]
     #     parsed_contents = list(MarkdownFile.parse(md_source))
     #     assert len(parsed_contents) == 1
-    #     assert isinstance(parsed_contents[0], SourceCodeListing)
+    #     assert isinstance(parsed_contents[0], SourceCode)
     #     assert parsed_contents[0].language == ""
     #     assert parsed_contents[0].code == "print('Hello, World!')"
