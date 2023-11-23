@@ -8,13 +8,8 @@ import typer
 def separator(id: str, sep_char: str = "-") -> str:
     BEGIN = 5
     WIDTH = 50
-    start = f"{sep_char * BEGIN} {id}"
-    return start + f" {(WIDTH - len(start)) * sep_char}" + "\n"
-
-
-def assert_true(condition: bool, msg: str):
-    if not condition:
-        raise typer.Exit(msg)  # type: ignore
+    start = f"{sep_char * BEGIN} {id} "
+    return start + f"{(WIDTH - len(start)) * sep_char}" + "\n"
 
 
 @dataclass
@@ -31,8 +26,9 @@ class MarkdownSourceText:
     current_line_number: int = 0
     start_of_block: int = 0  # For error messages
 
-    def _assert_true(self, condition: bool, msg: str):
-        assert_true(condition, f"ERROR in {self.file_path}: " + msg)
+    def _assert_true(self, condition: bool, msg: str) -> None:
+        if not condition:
+            raise typer.Exit(f"ERROR [{self.file_path}] " + msg)  # type: ignore
 
     def __post_init__(self):
         self._assert_true(self.file_path.exists(), "does not exist")
@@ -62,7 +58,7 @@ class MarkdownSourceText:
 
     def current_line(self) -> str | None:
         """
-        Produce the current line.
+        Produce the current line or None if past the end
         """
         if self.current_line_number >= len(self.lines):
             return None
@@ -118,6 +114,7 @@ class SourceCodeListing:
     """
 
     original_code_block: str
+    md_source: MarkdownSourceText
     language: str = ""
     source_file_name: str = ""
     code: str = ""
@@ -133,7 +130,7 @@ class SourceCodeListing:
         self.language = tagline[3:].strip()
         self.code = "".join(lines[1:-1])
 
-        assert_true(
+        self.md_source.assert_true(
             self.language,
             f"Language cannot be empty in {self.original_code_block}",
         )
@@ -165,24 +162,17 @@ class SourceCodeListing:
     ) -> "SourceCodeListing":
         code_lines: List[str] = [next(md_source)]
 
-        def _assert_true(condition: bool):
-            assert_true(
-                condition,
-                f"Unclosed code block starting at line {md_source.start_of_block}",
-            )
+        while line := md_source.current_line():
+            code_lines.append(next(md_source))  # Include closing ```
+            if line.startswith("```"):
+                # Closing tag must not be followed by a language:
+                md_source.assert_true(
+                    len(line.strip()) == len("```"),
+                    "Unclosed code block",
+                )
+                break
 
-        while (
-            md_source.current_line()
-            and md_source.current_line().strip() != "```"
-        ):
-            # Means there's more on the line after the ```:
-            _assert_true(
-                not md_source.current_line().startswith("```")
-            )
-            code_lines.append(next(md_source))
-
-        code_lines.append(next(md_source))  # Include closing ```
-        return SourceCodeListing("".join(code_lines))
+        return SourceCodeListing("".join(code_lines), md_source)
 
     def __repr__(self) -> str:
         def ignore_marker():
