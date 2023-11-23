@@ -1,7 +1,7 @@
 # markdown_utils/__init__.py
 from .markdown_file import (  # noqa: F401
     MarkdownSourceText,
-    MarkdownBlock,
+    Markdown,
     SourceCode,
     CodePath,
     MarkdownFile,

@@ -71,7 +71,7 @@ class MarkdownSourceText:
 
 
 @dataclass
-class MarkdownBlock:
+class Markdown:
     """
     Contains a section of normal markdown text
     """
@@ -88,7 +88,7 @@ class MarkdownBlock:
     @staticmethod
     def parse(
         md_source: MarkdownSourceText,
-    ) -> "MarkdownBlock":
+    ) -> "Markdown":
         # We know the current line is good:
         text_lines = [next(md_source)]
 
@@ -97,7 +97,7 @@ class MarkdownBlock:
                 break
             text_lines.append(next(md_source))
 
-        return MarkdownBlock(md_source, "".join(text_lines))
+        return Markdown(md_source, "".join(text_lines))
 
 
 @dataclass
@@ -243,7 +243,7 @@ class CodePath:
 class MarkdownFile:
     file_path: Path
     md_source: MarkdownSourceText
-    contents: List[MarkdownBlock | SourceCode | CodePath]
+    contents: List[Markdown | SourceCode | CodePath]
 
     def __init__(self, file_path: Path):
         self.file_path = file_path
@@ -253,7 +253,7 @@ class MarkdownFile:
     @staticmethod
     def parse(
         md_source: MarkdownSourceText,
-    ) -> Iterator[MarkdownBlock | SourceCode | CodePath]:
+    ) -> Iterator[Markdown | SourceCode | CodePath]:
         while current_line := md_source.current_line():
             match current_line:
                 case line if line.startswith("```"):
@@ -261,11 +261,11 @@ class MarkdownFile:
                 case line if line.startswith("%%"):
                     yield CodePath.parse(md_source)
                 case _:
-                    yield MarkdownBlock.parse(md_source)
+                    yield Markdown.parse(md_source)
 
     def __iter__(
         self,
-    ) -> Iterator[MarkdownBlock | SourceCode | CodePath]:
+    ) -> Iterator[Markdown | SourceCode | CodePath]:
         return iter(self.contents)
 
     def code_listings(self) -> List[SourceCode]:

@@ -2,7 +2,7 @@
 from markdown_tools.markdown_file import MarkdownSourceText
 from pathlib import Path
 from markdown_tools.markdown_file import MarkdownFile
-from markdown_tools.markdown_file import MarkdownBlock
+from markdown_tools.markdown_file import Markdown
 from markdown_tools.markdown_file import SourceCode
 from markdown_tools.markdown_file import CodePath
 
@@ -15,7 +15,7 @@ class TestParse:
         md_source = MarkdownSourceText(Path("test.md"))
         parsed_contents = list(MarkdownFile.parse(md_source))
         assert len(parsed_contents) == 1
-        assert isinstance(parsed_contents[0], MarkdownBlock)
+        assert isinstance(parsed_contents[0], Markdown)
         assert parsed_contents[0].text == "This is a markdown block"
 
     # Parses a markdown file with only source code listings
@@ -61,7 +61,7 @@ class TestParse:
         md_source.lines = ["This is a single line"]
         parsed_contents = list(MarkdownFile.parse(md_source))
         assert len(parsed_contents) == 1
-        assert isinstance(parsed_contents[0], MarkdownBlock)
+        assert isinstance(parsed_contents[0], Markdown)
         assert parsed_contents[0].text == "This is a single line"
 
     # # Parses a markdown file with a source code listing that has no language name
