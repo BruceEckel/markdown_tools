@@ -95,10 +95,8 @@ class MarkdownBlock:
         # We know the current line is good:
         text_lines = [next(md_source)]
 
-        while md_source.current_line():
-            if md_source.current_line().startswith(
-                "```"
-            ) or md_source.current_line().startswith("%%"):
+        while line := md_source.current_line():
+            if line.startswith("```") or line.startswith("%%"):
                 break
             text_lines.append(next(md_source))
 
@@ -243,7 +241,8 @@ class CodePath:
             if comment[-1] == "%%":  # Closing comment marker
                 break
             md_source.assert_true(
-                md_source.current_line(), "Unclosed markdown comment"
+                bool(md_source.current_line()),
+                "Unclosed markdown comment",
             )
 
         return CodePath(md_source, comment)
