@@ -58,7 +58,8 @@ class MarkdownSourceText:
 
     def current_line(self) -> str | None:
         """
-        Produce the current line or None if past the end
+        Produce the current line or None if past the end.
+        Does not increment current_line_number like next() does.
         """
         if self.current_line_number >= len(self.lines):
             return None
