@@ -252,15 +252,16 @@ class MarkdownFile:
 
     @staticmethod
     def parse(
-        markdown_source: MarkdownSourceText,
+        md_source: MarkdownSourceText,
     ) -> Iterator[MarkdownBlock | SourceCodeListing | CodePath]:
-        while current_line := markdown_source.current_line():
-            if current_line.startswith("```"):
-                yield SourceCodeListing.parse(markdown_source)
-            elif current_line.startswith("%%"):
-                yield CodePath.parse(markdown_source)
-            else:
-                yield MarkdownBlock.parse(markdown_source)
+        while current_line := md_source.current_line():
+            match current_line:
+                case line if line.startswith("```"):
+                    yield SourceCodeListing.parse(md_source)
+                case line if line.startswith("%%"):
+                    yield CodePath.parse(md_source)
+                case _:
+                    yield MarkdownBlock.parse(md_source)
 
     def __iter__(
         self,
