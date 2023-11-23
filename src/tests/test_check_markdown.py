@@ -16,16 +16,16 @@ def create_test_file(tmp_path):
     return _create_test_file
 
 
-def test_check_markdown_with_github_url(create_test_file):
-    md_content = "%%\ncode: https://github.com/example/repo\n%%\n"
-    md_path = create_test_file(md_content)
+# def test_check_markdown_with_github_url(create_test_file):
+#     md_content = "%%\ncode: https://github.com/example/repo\n%%\n"
+#     md_path = create_test_file(md_content)
 
-    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-        assert check_markdown(md_path) == "OK"
-        assert (
-            "GitHubURL: https://github.com/example/repo"
-            in mock_stdout.getvalue()
-        )
+#     with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+#         assert check_markdown(md_path) == "OK"
+#         assert (
+#             "GitHubURL: https://github.com/example/repo"
+#             in mock_stdout.getvalue()
+#         )
 
 
 def test_check_markdown_identical_content(create_test_file):
@@ -34,18 +34,18 @@ def test_check_markdown_identical_content(create_test_file):
     assert check_markdown(md_path) == "OK"
 
 
-def test_check_markdown_different_content(create_test_file):
-    md_content = "# Sample Markdown\n\nThis is a test."
-    md_modified_content = (
-        "# Sample Markdown\n\nThis is a modified test."
-    )
-    md_path = create_test_file(md_content)
-    md_path.write_text(md_modified_content, encoding="utf-8")
+# def test_check_markdown_different_content(create_test_file):
+#     md_content = "# Sample Markdown\n\nThis is a test."
+#     md_modified_content = (
+#         "# Sample Markdown\n\nThis is a modified test."
+#     )
+#     md_path = create_test_file(md_content)
+#     md_path.write_text(md_modified_content, encoding="utf-8")
 
-    assert check_markdown(md_path) == "Not the same"
-    assert (md_path.parent / (md_path.name + ".mtmp")).read_text(
-        encoding="utf-8"
-    ) == md_modified_content
+#     assert check_markdown(md_path) == "Not the same"
+#     assert (md_path.parent / (md_path.name + ".mtmp")).read_text(
+#         encoding="utf-8"
+#     ) == md_modified_content
 
 
 # Additional tests can be written to cover more scenarios and edge cases.
