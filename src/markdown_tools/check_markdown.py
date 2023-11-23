@@ -1,6 +1,7 @@
 #: check_markdown.py
 from io import StringIO
 from pathlib import Path
+import typer
 from .markdown_file import MarkdownFile
 
 
@@ -19,8 +20,12 @@ def check_markdown(md: Path):
     if new_markdown.read() == md.read_text(encoding="utf-8"):
         return "OK"
     else:
+        # Create comparison file:
         Path(md.name + ".mtmp").write_text(
             "".join([repr(section) for section in markdown]),
             encoding="utf-8",
         )
-        return f"Regenerated file {md.name}.mtmp is not the same as original {md.name}"
+        raise typer.Exit(
+            f"\nERROR: Regenerated file '{md.name}.mtmp'\n"
+            + f"is not the same as original '{md.name}'\n"
+        )

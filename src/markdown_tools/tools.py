@@ -9,6 +9,7 @@ from typing_extensions import Annotated
 from markdown_tools import (
     separator,
     check_code_listings,
+    check_markdown_comments,
     check_markdown,
     NumberedFile,
 )
@@ -52,6 +53,31 @@ def check(
     else:
         for md in Path(".").glob("*.md"):
             _check(md)
+
+
+@cli.command()
+def check_comments(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
+    """
+    List parsed comments
+    """
+
+    def _check(md: Path):
+        print(f"{md.name} ", end="")
+        assert md.exists(), f"{md} does not exist"
+        print(f"[{check_markdown(md)}]")
+
+    if filename:
+        check_markdown_comments(Path(filename))
+    else:
+        for md in Path(".").glob("*.md"):
+            check_markdown_comments(md)
 
 
 @cli.command()

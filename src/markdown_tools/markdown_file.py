@@ -1,7 +1,7 @@
 #: markdown_file.py
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List
+from typing import Iterator, List, Union
 import typer
 
 
@@ -195,55 +195,108 @@ class SourceCode:
 
 
 @dataclass
-class CodePath:
+class Comment:
     """
-    Contains a path to a directory containing code files.
-    Represented in the markdown file as:
+    Our special Markdown comments that use the following format:
     %%
-    path: directory
+    Yawn boring stuff that doesn't concern us
     %%
-    Each one of these sets the directory for subsequent code listings.
+    Unless the special comment contains information we're
+    looking for, this is just a placeholder to hold the comment.
+    Markdown comments that do not follow the above format
+    are just passed through the parser unnoticed. Thus we
+    only allow/look for start & end marker lines that are
+    *exactly* `%%`
     """
 
     md_source: MarkdownSourceText
     comment: List[str]
-    path: str | None = None
-
-    def __post_init__(self):
-        self.md_source.assert_true(
-            self.comment[1].startswith("path:"),
-            f"Missing 'path:' in:\n{self}",
-        )
-        self.path = self.comment[1].lstrip("path:").strip()
 
     def __repr__(self) -> str:
-        return f"%%\n{self.comment[1]}\n%%\n"
+        return "".join(self.comment)
 
     def __str__(self) -> str:
-        return "\n" + separator("CodePath") + repr(self)
+        return "\n" + separator("Comment") + repr(self)
+
+    # Indexing including slicing:
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return self.comment[index.start : index.stop : index.step]
+        return self.comment[index]
+
+    def __iter__(self):
+        return iter(self.comment)
 
     @staticmethod
     def parse(
         md_source: MarkdownSourceText,
-    ) -> "CodePath":
-        comment: List[str] = [next(md_source).rstrip()]  # Initial %%
+    ) -> Union["Comment", "CodePath"]:
+        comment: List[str] = [next(md_source)]  # Initial %%
         while True:
-            comment.append(next(md_source).rstrip())
-            if comment[-1] == "%%":  # Closing comment marker
+            comment.append(next(md_source))
+            if comment[-1].rstrip() == "%%":  # Closing comment marker
                 break
             md_source.assert_true(
                 bool(md_source.current_line()),
                 "Unclosed markdown comment",
             )
+        batch = "".join(comment)
+        if "url:" in batch or "path:" in batch:
+            return CodePath(Comment(md_source, comment))
 
-        return CodePath(md_source, comment)
+        return Comment(md_source, comment)
+
+
+@dataclass
+class CodePath:
+    """
+    A special comment containing a path to a directory of code files.
+    Each of these resets the directory for subsequent code listings.
+    Represented in the markdown file as:
+    %%
+    path: directory
+    url: URL
+    %%
+    There must be at least one of "path:" or "url:" or the comment
+    will be ignored (i.e. an ordinary `Comment`).
+    """
+
+    comment: Comment
+    path: str | None = None
+    url: str | None = None
+
+    def __post_init__(self):
+        def exists(id: str) -> bool:
+            return self.comment[1].startswith(id)
+
+        self.comment.md_source.assert_true(
+            exists("path:") or exists("url:"),
+            f"Missing 'path:' or 'url:' in:\n{self}",
+        )
+        for line in self.comment:
+            if line.startswith("path:"):
+                self.path = line.strip("path:").strip()
+            if line.startswith("url:"):
+                self.url = line.strip("url:").strip()
+
+    def __repr__(self) -> str:
+        return repr(self.comment)
+
+    def __str__(self) -> str:
+        return (
+            "\n"
+            + separator("CodePath")
+            + f"path: [{self.path}]\n"
+            + f"url: [{self.url}]\n"
+            + repr(self)
+        )
 
 
 @dataclass
 class MarkdownFile:
     file_path: Path
     md_source: MarkdownSourceText
-    contents: List[Markdown | SourceCode | CodePath]
+    contents: List[Markdown | SourceCode | CodePath | Comment]
 
     def __init__(self, file_path: Path):
         self.file_path = file_path
@@ -253,19 +306,19 @@ class MarkdownFile:
     @staticmethod
     def parse(
         md_source: MarkdownSourceText,
-    ) -> Iterator[Markdown | SourceCode | CodePath]:
+    ) -> Iterator[Markdown | SourceCode | CodePath | Comment]:
         while current_line := md_source.current_line():
             match current_line:
                 case line if line.startswith("```"):
                     yield SourceCode.parse(md_source)
-                case line if line.startswith("%%"):
-                    yield CodePath.parse(md_source)
+                case line if line.strip() == "%%":
+                    yield Comment.parse(md_source)
                 case _:
                     yield Markdown.parse(md_source)
 
     def __iter__(
         self,
-    ) -> Iterator[Markdown | SourceCode | CodePath]:
+    ) -> Iterator[Markdown | SourceCode | CodePath | Comment]:
         return iter(self.contents)
 
     def code_listings(self) -> List[SourceCode]:
@@ -273,3 +326,10 @@ class MarkdownFile:
 
     def code_paths(self) -> List[CodePath]:
         return [part for part in self if isinstance(part, CodePath)]
+
+    def comments(self) -> List[Comment | CodePath]:
+        return [
+            part
+            for part in self
+            if isinstance(part, Comment) or isinstance(part, CodePath)
+        ]

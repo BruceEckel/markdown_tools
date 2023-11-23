@@ -1,6 +1,6 @@
-# check_code_listings.py
+# check_components.py
 from pathlib import Path
-from .markdown_file import MarkdownFile, SourceCode
+from .markdown_file import MarkdownFile, SourceCode, Comment, CodePath
 
 
 def check_code_block(scl: SourceCode) -> str | None:
@@ -15,3 +15,12 @@ def check_code_listings(md: Path):
         r = check_code_block(listing)
         if r:
             print(r)
+
+
+def check_markdown_comments(md: Path):
+    print(f"{md}:")
+    for comment in MarkdownFile(md).comments():
+        assert isinstance(comment, Comment) or isinstance(
+            comment, CodePath
+        )
+        print(comment)
