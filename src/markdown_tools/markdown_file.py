@@ -308,11 +308,20 @@ class MarkdownFile:
     file_path: Path
     md_source: MarkdownSourceText
     contents: List[Markdown | SourceCode | CodePath | Comment]
+    name_already_displayed: bool = False
 
     def __init__(self, file_path: Path):
+        assert file_path.exists()
+        assert file_path.is_file()
         self.file_path = file_path
         self.md_source = MarkdownSourceText(self.file_path)
         self.contents = list(MarkdownFile.parse(self.md_source))
+
+    def display_name(self):
+        if self.name_already_displayed:
+            return
+        self.name_already_displayed = True
+        print(separator(self.file_path.name, "-"))
 
     @staticmethod
     def parse(
@@ -335,8 +344,22 @@ class MarkdownFile:
     def code_listings(self) -> List[SourceCode]:
         return [part for part in self if isinstance(part, SourceCode)]
 
+    def pathed_code_listings(self) -> List[SourceCode]:
+        return [
+            part
+            for part in self
+            if isinstance(part, SourceCode) and not part.ignore
+        ]
+
     def code_paths(self) -> List[CodePath]:
         return [part for part in self if isinstance(part, CodePath)]
+
+    def codepaths_exist(self) -> bool:
+        if not self.pathed_code_listings():
+            return False  # No CodePaths needed
+        if self.code_paths():
+            return False  # Already exists (TODO: might be url: and not :path)
+        return True
 
     def comments(self) -> List[Comment | CodePath]:
         return [

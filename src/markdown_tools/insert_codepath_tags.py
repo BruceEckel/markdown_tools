@@ -4,6 +4,7 @@ from .markdown_file import MarkdownFile
 
 
 def insert_codepath_tag(md: Path):
-    markdown = MarkdownFile(md)
-    for code_path in markdown.code_paths():
+    md_file = MarkdownFile(md)
+    for code_path in md_file.code_paths():
+        md_file.display_name()
         print(code_path)

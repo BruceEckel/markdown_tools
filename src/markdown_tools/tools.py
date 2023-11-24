@@ -95,16 +95,11 @@ def listings(
     Validates code listings within Markdown files.
     """
 
-    def _check(md: Path):
-        assert md.exists(), f"{md} does not exist"
-        print(separator(md.name, "-"), end="")
-        check_code_listings(md)
-
     if filename:
-        _check(Path(filename))
+        check_code_listings(Path(filename))
     else:
         for md in Path(".").glob("*.md"):
-            _check(md)
+            check_code_listings(md)
 
 
 @cli.command()
@@ -120,16 +115,11 @@ def insert_code_paths(
     Insert code path comment tag in a file that doesn't have one.
     """
 
-    def _insert(md: Path):
-        assert md.exists(), f"{md} does not exist"
-        print(separator(md.name, "-"), end="")
-        insert_codepath_tag(md)
-
     if filename:
-        _insert(Path(filename))
+        insert_codepath_tag(Path(filename))
     else:
         for md in Path(".").glob("*.md"):
-            _insert(md)
+            insert_codepath_tag(md)
 
 
 @cli.command()
