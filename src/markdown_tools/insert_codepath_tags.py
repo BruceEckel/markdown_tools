@@ -1,6 +1,6 @@
 #: insert_codepath_tags.py
 from pathlib import Path
-from .markdown_file import MarkdownFile
+from markdown_tools import MarkdownFile
 
 
 def insert_codepath_tag(md: Path):

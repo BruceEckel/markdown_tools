@@ -2,7 +2,7 @@
 from io import StringIO
 from pathlib import Path
 import typer
-from .markdown_file import MarkdownFile
+from markdown_tools import MarkdownFile
 
 
 def check_markdown(md: Path):

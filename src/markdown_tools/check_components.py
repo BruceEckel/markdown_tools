@@ -10,10 +10,12 @@ def check_code_block(scl: SourceCode) -> str | None:
 
 
 def check_code_listings(md: Path):
-    for listing in MarkdownFile(md).code_listings():
+    md_file = MarkdownFile(md)
+    for listing in md_file.code_listings():
         assert isinstance(listing, SourceCode)
         r = check_code_block(listing)
         if r:
+            md_file.display_name_once()
             print(r)
 
 
