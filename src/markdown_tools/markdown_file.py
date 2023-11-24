@@ -1,8 +1,8 @@
 #: markdown_file.py
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, List, Union
-import typer
+from markdown_tools import MarkdownSourceText
 
 
 def separator(id: str, sep_char: str = "-") -> str:
@@ -10,64 +10,6 @@ def separator(id: str, sep_char: str = "-") -> str:
     WIDTH = 50
     start = f"{sep_char * BEGIN} {id} "
     return start + f"{(WIDTH - len(start)) * sep_char}" + "\n"
-
-
-@dataclass
-class MarkdownSourceText:
-    """
-    Delivers the markdown file a line at a time.
-    Keeps track of the current line.
-    Knows the Path of the file, for use in error messages.
-    """
-
-    file_path: Path
-    original_markdown: str = ""
-    lines: List[str] = field(default_factory=list)
-    current_line_number: int = 0
-    start_of_block: int = 0  # For error messages
-
-    def _assert_true(self, condition: bool, msg: str) -> None:
-        if not condition:
-            raise typer.Exit(f"ERROR [{self.file_path}] " + msg)  # type: ignore
-
-    def __post_init__(self):
-        self._assert_true(self.file_path.exists(), "does not exist")
-        self._assert_true(
-            not self.file_path.is_dir(), "is a directory"
-        )
-        self._assert_true(
-            self.file_path.suffix == ".md", "does not end with '.md'"
-        )
-        self.original_markdown = self.file_path.read_text(
-            encoding="utf-8"
-        )
-        self.lines = self.original_markdown.splitlines(True)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self) -> str:
-        if self.current_line_number >= len(self.lines):
-            raise StopIteration
-        line = self.lines[self.current_line_number]
-        self.current_line_number += 1
-        return line
-
-    def __bool__(self) -> bool:
-        return self.current_line_number < len(self.lines)
-
-    def current_line(self) -> str | None:
-        """
-        Produce the current line or None if past the end.
-        Does not increment current_line_number like next() does.
-        """
-        if self.current_line_number >= len(self.lines):
-            return None
-        return self.lines[self.current_line_number]
-
-    def assert_true(self, condition: bool, msg: str):
-        start_err = f" at line {self.start_of_block}:\n"
-        self._assert_true(condition, start_err + msg)
 
 
 @dataclass
@@ -317,7 +259,7 @@ class MarkdownFile:
         self.md_source = MarkdownSourceText(self.file_path)
         self.contents = list(MarkdownFile.parse(self.md_source))
 
-    def display_name(self):
+    def display_name_once(self):
         if self.name_already_displayed:
             return
         self.name_already_displayed = True
@@ -345,10 +287,9 @@ class MarkdownFile:
         return [part for part in self if isinstance(part, SourceCode)]
 
     def pathed_code_listings(self) -> List[SourceCode]:
+        # Any code listings that are not explicitly ignored
         return [
-            part
-            for part in self
-            if isinstance(part, SourceCode) and not part.ignore
+            part for part in self.code_listings() if not part.ignore
         ]
 
     def code_paths(self) -> List[CodePath]:

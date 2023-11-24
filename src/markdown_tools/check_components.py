@@ -1,6 +1,6 @@
 # check_components.py
 from pathlib import Path
-from .markdown_file import MarkdownFile, SourceCode, Comment, CodePath
+from markdown_tools import MarkdownFile, SourceCode, Comment, CodePath
 
 
 def check_code_block(scl: SourceCode) -> str | None:

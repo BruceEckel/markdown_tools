@@ -1,13 +1,15 @@
-# markdown_utils/__init__.py
+# markdown_tools/__init__.py
+from .markdown_source_text import MarkdownSourceText
 from .markdown_file import (  # noqa: F401
-    MarkdownSourceText,
+    separator,
+    MarkdownFile,
     Markdown,
     SourceCode,
+    Comment,
     CodePath,
-    MarkdownFile,
-    separator,
 )
 from .check_markdown import check_markdown  # noqa: F401
+from .insert_codepath_tags import insert_codepath_tag
 from .check_components import (
     check_code_listings,
     check_markdown_comments,

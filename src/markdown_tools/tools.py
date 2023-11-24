@@ -7,16 +7,15 @@ import typer
 from typing import List, Optional
 from typing_extensions import Annotated
 from markdown_tools import (
-    separator,
     check_code_listings,
     check_markdown_comments,
     check_markdown,
+    insert_codepath_tag,
     NumberedFile,
 )
 from pathlib import Path
 import platform
 
-from markdown_tools.insert_codepath_tags import insert_codepath_tag
 
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
 
