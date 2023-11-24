@@ -16,6 +16,8 @@ from markdown_tools import (
 from pathlib import Path
 import platform
 
+from markdown_tools.insert_codepath_tags import insert_codepath_tag
+
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
 
 
@@ -103,6 +105,31 @@ def listings(
     else:
         for md in Path(".").glob("*.md"):
             _check(md)
+
+
+@cli.command()
+def insert_code_paths(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
+    """
+    Insert code path comment tag in a file that doesn't have one.
+    """
+
+    def _insert(md: Path):
+        assert md.exists(), f"{md} does not exist"
+        print(separator(md.name, "-"), end="")
+        insert_codepath_tag(md)
+
+    if filename:
+        _insert(Path(filename))
+    else:
+        for md in Path(".").glob("*.md"):
+            _insert(md)
 
 
 @cli.command()

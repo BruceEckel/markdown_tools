@@ -291,6 +291,17 @@ class CodePath:
             + repr(self)
         )
 
+    @staticmethod
+    def new(md_source: MarkdownSourceText, path: Path):
+        "Create a CodePath from Path"
+        md_source.assert_true(path.exists(), f"{path} doesn't exist")
+        comment: List[str] = [
+            "%%\n",
+            f"path: {path.absolute()}\n",
+            "%%\n",
+        ]
+        return CodePath(Comment(md_source, comment))
+
 
 @dataclass
 class MarkdownFile:

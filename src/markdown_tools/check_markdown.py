@@ -26,6 +26,6 @@ def check_markdown(md: Path):
             encoding="utf-8",
         )
         raise typer.Exit(
-            f"\nERROR: Regenerated file '{md.name}.mtmp'\n"
+            f"\nERROR: Regenerated file '{md.name}.mtmp'\n"  # type: ignore
             + f"is not the same as original '{md.name}'\n"
         )
