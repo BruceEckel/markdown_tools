@@ -2,12 +2,7 @@
 from pathlib import Path
 from markdown_tools import MarkdownFile, CodePath, SourceCode
 import typer
-
-code_paths = {
-    "python": "C:/git/python-experiments",
-    "rust": "C:/git/rust-experiments",
-    "go": "C:/git/go-experiments",
-}
+from .markdown_file import starting_code_path
 
 
 def find_file(start_path: Path, file_name: str) -> Path | None:
@@ -50,14 +45,14 @@ def validate_codepath_tags(md: Path):
                     f"{part.source_file_name} appeared before CodePath"
                 )
                 continue
-            if full_path := code_path.validate(part.source_file_name):
+            if full_path := code_path.validate(part):
                 print(
                     f"Validated {code_path.path} -> {part.source_file_name}\n"
                     f"full_path: {full_path.as_posix()}"
                 )
             else:
                 print(
-                    f"Couldn't find {part.source_file_name} under {code_path.path}"
+                    f"Invalid: {part.source_file_name} under {code_path.path}"
                 )
 
 
@@ -86,12 +81,13 @@ def insert_codepath_tags(md: Path):
                     )
                 else:
                     raise typer.Exit(
-                        "FAILED insert_codepath_tags(): "
+                        "FAILED insert_codepath_tags(): "  # type: ignore
                         f"{code_path.path} -> {part.source_file_name}"
                     )
             else:  # No prior code_path, make one
                 if validated := validated_codepath(
-                    code_paths[part.language], part.source_file_name
+                    starting_code_path[part.language],
+                    part.source_file_name,
                 ):
                     idx = md_file.index_of(part)
                     code_path = CodePath.new(md_file, validated)
@@ -99,8 +95,8 @@ def insert_codepath_tags(md: Path):
                     md_file.write_new_file(md_file.file_path)
                 else:
                     raise typer.Exit(
-                        "FAILED insert_codepath_tags(): "
-                        f"{code_paths[part.language]} -> {part.source_file_name}"
+                        "FAILED insert_codepath_tags(): "  # type: ignore
+                        f"{starting_code_path[part.language]} -> {part.source_file_name}"
                     )
 
 
@@ -118,7 +114,7 @@ def insert_codepath_tag(md: Path):
             f"{n = } {listing.language}: {listing.source_file_name}"
         )
         if n == 0:  # Only do it for the first listing
-            start_path = Path(code_paths[listing.language])
+            start_path = Path(starting_code_path[listing.language])
             if found_path := find_file(
                 start_path, listing.source_file_name
             ):

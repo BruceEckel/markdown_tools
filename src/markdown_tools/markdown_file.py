@@ -1,8 +1,15 @@
 #: markdown_file.py
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List, Union, TypeAlias
+from typing import Iterator, List, Union, TypeAlias, cast
 import typer
+
+
+starting_code_path = {  # Default search paths for languages
+    "python": "C:/git/python-experiments",
+    "rust": "C:/git/rust-experiments",
+    "go": "C:/git/go-experiments",
+}
 
 
 def separator(id: str, sep_char: str = "-") -> str:
@@ -199,7 +206,7 @@ class Comment:
     """
     Our special Markdown comments that use the following format:
     %%
-    Yawn boring stuff that doesn't concern us
+    A plain comment with no special information
     %%
     Unless the special comment contains information we're
     looking for, this is just a placeholder to hold the comment.
@@ -247,6 +254,22 @@ class Comment:
         return Comment(md_source, comment)
 
 
+def remove_subpath(full_path: str, rest_of_path: str) -> str:
+    _full_path = Path(full_path)
+    _rest_of_path = Path(rest_of_path)
+    try:
+        # Attempt to get the relative path
+        # This will succeed if rest_of_path is a suffix of full_path
+        relative_path = _full_path.relative_to(
+            _full_path.parent.joinpath(_rest_of_path).parent
+        )
+        return relative_path.as_posix()
+    except ValueError:
+        raise typer.Exit(
+            f"{rest_of_path} is not at the end of {full_path}"  # type: ignore
+        )
+
+
 @dataclass
 class CodePath:
     """
@@ -279,18 +302,60 @@ class CodePath:
             if line.startswith("url:"):
                 self.url = line.strip("url:").strip()
 
-    def validate(self, tail_path: str) -> Path | None:
+    def validate(self, source_code: SourceCode) -> Path | None:
+        """
+        Check that this CodePath's `path` + source_code.source_file_name exists.
+        """
         assert self.path, f"Cannot validate empty path in:\n{self}"
-        start = Path(self.path)
+        start_path = Path(self.path)
+        assert (
+            start_path.exists()
+        ), f"Starting path {start_path.as_posix()} does not exist"
+        full_path = start_path / source_code.source_file_name
+        if full_path.exists():
+            return full_path
+        return None
+
+    def new_adjusted(self, source_code: SourceCode) -> "CodePath":
+        """
+        Use this CodePath to create a new corrected one based on the SourceCode argument.
+        Note: Presumably the current CodePath already didn't work for this SourceCode.
+        """
+        if self.validate(source_code):
+            return self.clone()  # It works, no changes needed
+        assert self.path is not None
+        start = Path(cast(str, self.path))
         assert (
             start.exists()
         ), f"Starting path {start.as_posix()} does not exist"
-        for file in start.rglob(tail_path):
-            return file
-        return None
+        try:
+            full_path = next(
+                start.rglob(source_code.source_file_name)
+            )
+            adjusted_code_path = remove_subpath(
+                full_path.as_posix(), source_code.source_file_name
+            )
+            return self.clone(adjusted_code_path)
+        except Exception as e:
+            raise typer.Exit(
+                f"Cannot created adjusted {source_code.source_file_name}\n"
+                f"using {self.path}\n{e}"  # type: ignore
+            )
+
+    def clone(self, path: str = "") -> "CodePath":
+        if not path:
+            return CodePath(
+                Comment(self.comment.md_source, self.comment.comment)
+            )
+        return CodePath(
+            Comment(
+                self.comment.md_source,
+                ["%%\n", f"path: {path}\n", "%%"],
+            )
+        )
 
     @staticmethod
-    def new(md_file: "MarkdownFile", path: Path):
+    def new(md_file: "MarkdownFile", path: Path) -> "CodePath":
         "Create a CodePath from Path"
         md_file.md_source.assert_true(
             path.exists(), f"{path} doesn't exist"
@@ -332,12 +397,6 @@ class MarkdownFile:
         self.md_source = MarkdownSourceText(self.file_path)
         self.contents = list(MarkdownFile.parse(self.md_source))
 
-    def display_name_once(self, end=""):
-        if self.name_already_displayed:
-            return
-        self.name_already_displayed = True
-        print(separator(self.file_path.name, "-"), end=end)
-
     @staticmethod
     def parse(
         md_source: MarkdownSourceText,
@@ -351,6 +410,12 @@ class MarkdownFile:
                 case _:
                     yield Markdown.parse(md_source)
 
+    def display_name_once(self, end=""):
+        if self.name_already_displayed:
+            return
+        self.name_already_displayed = True
+        print(separator(self.file_path.name, "-"), end=end)
+
     def write_new_file(self, file_path: Path):
         # assert not file_path.exists()
         file_path.write_text(
@@ -363,7 +428,7 @@ class MarkdownFile:
             part for part in self.contents if isinstance(part, item)
         ]
         # print(f"__contains__({self.file_path}, {item}): {result}")
-        return result
+        return bool(result)
 
     def __getitem__(self, index: int):
         if isinstance(index, slice):
