@@ -1,7 +1,7 @@
 #: markdown_file.py
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List, Union
+from typing import Iterator, List, Union, TypeAlias
 import typer
 
 
@@ -303,11 +303,14 @@ class CodePath:
         return CodePath(Comment(md_source, comment))
 
 
+MarkdownPart: TypeAlias = Markdown | SourceCode | CodePath | Comment
+
+
 @dataclass
 class MarkdownFile:
     file_path: Path
     md_source: MarkdownSourceText
-    contents: List[Markdown | SourceCode | CodePath | Comment]
+    contents: List[MarkdownPart]
     name_already_displayed: bool = False
 
     def __init__(self, file_path: Path):
@@ -326,7 +329,7 @@ class MarkdownFile:
     @staticmethod
     def parse(
         md_source: MarkdownSourceText,
-    ) -> Iterator[Markdown | SourceCode | CodePath | Comment]:
+    ) -> Iterator[MarkdownPart]:
         while current_line := md_source.current_line():
             match current_line:
                 case line if line.startswith("```"):
@@ -336,9 +339,31 @@ class MarkdownFile:
                 case _:
                     yield Markdown.parse(md_source)
 
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return self.contents[
+                index.start : index.stop : index.step
+            ]
+        return self.contents[index]
+
+    def __setitem__(self, index, value: MarkdownPart):
+        self.contents[index] = value
+
+    def __len__(self):
+        return len(self.contents)
+
+    def index_of(self, item):
+        try:
+            return self.contents.index(item)
+        except ValueError:
+            return -1
+
+    def insert(self, index, item):
+        self.contents.insert(index, item)
+
     def __iter__(
         self,
-    ) -> Iterator[Markdown | SourceCode | CodePath | Comment]:
+    ) -> Iterator[MarkdownPart]:
         return iter(self.contents)
 
     def code_listings(self) -> List[SourceCode]:
@@ -347,7 +372,9 @@ class MarkdownFile:
     def pathed_code_listings(self) -> List[SourceCode]:
         # Any code listings that are not explicitly ignored
         return [
-            part for part in self.code_listings() if not part.ignore
+            part
+            for part in self.code_listings()
+            if not part.language == "text" and not part.ignore
         ]
 
     def code_paths(self) -> List[CodePath]:
