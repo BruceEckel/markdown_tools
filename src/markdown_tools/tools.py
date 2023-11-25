@@ -11,6 +11,7 @@ from markdown_tools import (
     check_markdown_comments,
     check_markdown,
     insert_codepath_tags,
+    validate_codepath_tags,
     NumberedFile,
 )
 from pathlib import Path
@@ -99,6 +100,28 @@ def listings(
     else:
         for md in Path(".").glob("*.md"):
             check_code_listings(md)
+
+
+@cli.command()
+def validate_code_paths(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
+    """
+    Verify that code path comment tags are corrects.
+    """
+
+    if filename:
+        validate_codepath_tags(Path(filename))
+    else:
+        for md in [
+            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
+        ]:
+            validate_codepath_tags(md)
 
 
 @cli.command()

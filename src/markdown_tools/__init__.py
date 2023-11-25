@@ -13,6 +13,7 @@ from .numbered_file import NumberedFile, Result  # noqa: F401
 from .insert_codepath_tags import (
     insert_codepath_tag,
     insert_codepath_tags,
+    validate_codepath_tags,
 )
 from .check_components import (
     check_code_listings,

@@ -342,7 +342,7 @@ class MarkdownFile:
                     yield Markdown.parse(md_source)
 
     def write_new_file(self, file_path: Path):
-        assert not file_path.exists()
+        # assert not file_path.exists()
         file_path.write_text(
             "".join([repr(section) for section in self.contents]),
             encoding="utf-8",

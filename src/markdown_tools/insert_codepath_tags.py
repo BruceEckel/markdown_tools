@@ -31,6 +31,30 @@ def validated_codepath(
     return None  # No file found
 
 
+def validate_codepath_tags(md: Path):
+    md_file = MarkdownFile(md)
+    code_path: CodePath | None = None
+    for part in md_file:
+        if isinstance(part, CodePath):
+            code_path = part  # Most recent CodePath
+        if (
+            isinstance(part, SourceCode)
+            and not part.language == "text"
+            and not part.ignore
+        ):
+            md_file.display_name_once()
+            if code_path is None:
+                # raise typer.Exit(
+                print(
+                    "FAILED validate_codepath_tags(): "
+                    f"{part.source_file_name} appeared before CodePath"
+                )
+            elif validated_codepath(code_path, part.source_file_name):
+                print(
+                    f"Validated {code_path.path} -> {part.source_file_name}"
+                )
+
+
 def insert_codepath_tags(md: Path):
     md_file = MarkdownFile(md)
     tmp_file = md_file.file_path.with_suffix(".tmp.md")
@@ -50,12 +74,14 @@ def insert_codepath_tags(md: Path):
                 if validated_codepath(
                     code_path, part.source_file_name
                 ):
+                    md_file.display_name_once()
                     print(
-                        f"Validated {code_path} for {part.source_file_name}"
+                        f"Validated {code_path.path} -> {part.source_file_name}"
                     )
                 else:
-                    typer.Exit(
-                        f"Failed: {code_path} for {part.source_file_name}"
+                    raise typer.Exit(
+                        "FAILED insert_codepath_tags(): "
+                        f"{code_path.path} -> {part.source_file_name}"
                     )
             else:  # No prior code_path, make one
                 if validated := validated_codepath(
@@ -64,10 +90,11 @@ def insert_codepath_tags(md: Path):
                     idx = md_file.index_of(part)
                     code_path = CodePath.new(md_file, validated)
                     md_file.insert(idx, code_path)
-                    md_file.write_new_file(tmp_file)
+                    md_file.write_new_file(md_file.file_path)
                 else:
-                    typer.Exit(
-                        f"Failed: {code_paths[part.language]} for {part.source_file_name}"
+                    raise typer.Exit(
+                        "FAILED insert_codepath_tags(): "
+                        f"{code_paths[part.language]} -> {part.source_file_name}"
                     )
 
 
