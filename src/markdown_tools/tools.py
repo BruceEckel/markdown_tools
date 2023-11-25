@@ -40,7 +40,7 @@ def check(
     Validates Markdown files.
     """
 
-    for tmp_file in Path(".").glob("*.mtmp"):
+    for tmp_file in Path(".").glob("*.tmp.md"):
         print(f"Removing {tmp_file.name}")
         tmp_file.unlink()
 
@@ -117,7 +117,9 @@ def insert_code_paths(
     if filename:
         insert_codepath_tag(Path(filename))
     else:
-        for md in Path(".").glob("*.md"):
+        for md in [
+            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
+        ]:
             insert_codepath_tag(md)
 
 

@@ -292,15 +292,17 @@ class CodePath:
         )
 
     @staticmethod
-    def new(md_source: MarkdownSourceText, path: Path):
+    def new(md_file: "MarkdownFile", path: Path):
         "Create a CodePath from Path"
-        md_source.assert_true(path.exists(), f"{path} doesn't exist")
+        md_file.md_source.assert_true(
+            path.exists(), f"{path} doesn't exist"
+        )
         comment: List[str] = [
             "%%\n",
-            f"path: {path.absolute()}\n",
+            f"path: {path.as_posix()}\n",
             "%%\n",
         ]
-        return CodePath(Comment(md_source, comment))
+        return CodePath(Comment(md_file.md_source, comment))
 
 
 MarkdownPart: TypeAlias = Markdown | SourceCode | CodePath | Comment
@@ -339,7 +341,21 @@ class MarkdownFile:
                 case _:
                     yield Markdown.parse(md_source)
 
-    def __getitem__(self, index):
+    def write_new_file(self, file_path: Path):
+        assert not file_path.exists()
+        file_path.write_text(
+            "".join([repr(section) for section in self.contents]),
+            encoding="utf-8",
+        )
+
+    def __contains__(self, item: MarkdownPart) -> bool:
+        result = [
+            part for part in self.contents if isinstance(part, item)
+        ]
+        # print(f"__contains__({self.file_path}, {item}): {result}")
+        return result
+
+    def __getitem__(self, index: int):
         if isinstance(index, slice):
             return self.contents[
                 index.start : index.stop : index.step
