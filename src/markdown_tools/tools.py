@@ -10,7 +10,7 @@ from markdown_tools import (
     check_code_listings,
     check_markdown_comments,
     check_markdown,
-    insert_codepath_tag,
+    insert_codepath_tags,
     NumberedFile,
 )
 from pathlib import Path
@@ -115,12 +115,12 @@ def insert_code_paths(
     """
 
     if filename:
-        insert_codepath_tag(Path(filename))
+        insert_codepath_tags(Path(filename))
     else:
         for md in [
             p for p in Path(".").glob("*.md") if ".tmp" not in p.name
         ]:
-            insert_codepath_tag(md)
+            insert_codepath_tags(md)
 
 
 @cli.command()
