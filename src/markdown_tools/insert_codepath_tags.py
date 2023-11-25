@@ -13,20 +13,20 @@ code_paths = {
 def find_file(start_path: Path, file_name: str) -> Path | None:
     # Search recursively for the file:
     for path in start_path.rglob(file_name):
-        return path  # First match
+        return path.parent  # First match
     return None  # No file found
 
 
 def validated_codepath(
-    guess: str | CodePath, file_name: str
+    start: str | CodePath, file_name: str
 ) -> Path | None:
-    assert isinstance(guess, str) or isinstance(guess, CodePath)
-    if isinstance(guess, str):
-        guess_path = Path(guess)
-    elif isinstance(guess, CodePath):
-        guess_path = Path(guess.path)
+    assert isinstance(start, str) or isinstance(start, CodePath)
+    if isinstance(start, str):
+        start_path = Path(start)
+    elif isinstance(start, CodePath):
+        start_path = Path(start.path)
 
-    for path in Path(guess_path).rglob(file_name):
+    for path in start_path.rglob(file_name):
         return path.parent  # First match
     return None  # No file found
 
@@ -49,9 +49,15 @@ def validate_codepath_tags(md: Path):
                     "FAILED validate_codepath_tags(): "
                     f"{part.source_file_name} appeared before CodePath"
                 )
-            elif validated_codepath(code_path, part.source_file_name):
+                continue
+            if full_path := code_path.validate(part.source_file_name):
                 print(
-                    f"Validated {code_path.path} -> {part.source_file_name}"
+                    f"Validated {code_path.path} -> {part.source_file_name}\n"
+                    f"full_path: {full_path.as_posix()}"
+                )
+            else:
+                print(
+                    f"Couldn't find {part.source_file_name} under {code_path.path}"
                 )
 
 

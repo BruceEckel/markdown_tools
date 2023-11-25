@@ -279,17 +279,15 @@ class CodePath:
             if line.startswith("url:"):
                 self.url = line.strip("url:").strip()
 
-    def __repr__(self) -> str:
-        return repr(self.comment)
-
-    def __str__(self) -> str:
-        return (
-            "\n"
-            + separator("CodePath")
-            + f"path: [{self.path}]\n"
-            + f"url: [{self.url}]\n"
-            + repr(self)
-        )
+    def validate(self, tail_path: str) -> Path | None:
+        assert self.path, f"Cannot validate empty path in:\n{self}"
+        start = Path(self.path)
+        assert (
+            start.exists()
+        ), f"Starting path {start.as_posix()} does not exist"
+        for file in start.rglob(tail_path):
+            return file
+        return None
 
     @staticmethod
     def new(md_file: "MarkdownFile", path: Path):
@@ -303,6 +301,18 @@ class CodePath:
             "%%\n",
         ]
         return CodePath(Comment(md_file.md_source, comment))
+
+    def __repr__(self) -> str:
+        return repr(self.comment)
+
+    def __str__(self) -> str:
+        return (
+            "\n"
+            + separator("CodePath")
+            + f"path: [{self.path}]\n"
+            + f"url: [{self.url}]\n"
+            + repr(self)
+        )
 
 
 MarkdownPart: TypeAlias = Markdown | SourceCode | CodePath | Comment
