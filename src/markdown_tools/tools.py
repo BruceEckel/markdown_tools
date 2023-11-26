@@ -29,7 +29,7 @@ cli = typer.Typer(
 
 
 @cli.command()
-def check(
+def a_check(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -58,7 +58,7 @@ def check(
 
 
 @cli.command()
-def check_comments(
+def b_check_comments(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -83,7 +83,7 @@ def check_comments(
 
 
 @cli.command()
-def listings(
+def c_listings(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -103,51 +103,7 @@ def listings(
 
 
 @cli.command()
-def validate_code_paths(
-    filename: Annotated[
-        Optional[str],
-        typer.Argument(
-            help="Markdown file to check (None: all files)"
-        ),
-    ] = None
-):
-    """
-    Verify that code path comment tags are corrects.
-    """
-
-    if filename:
-        validate_codepath_tags(Path(filename))
-    else:
-        for md in [
-            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
-        ]:
-            validate_codepath_tags(md)
-
-
-@cli.command()
-def insert_code_paths(
-    filename: Annotated[
-        Optional[str],
-        typer.Argument(
-            help="Markdown file to check (None: all files)"
-        ),
-    ] = None
-):
-    """
-    Insert code path comment tag in a file that doesn't have one.
-    """
-
-    if filename:
-        insert_codepath_tags(Path(filename))
-    else:
-        for md in [
-            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
-        ]:
-            insert_codepath_tags(md)
-
-
-@cli.command()
-def renumber(
+def d_renumber(
     go: Annotated[
         Optional[str],
         typer.Argument(help="'go': perform the changes"),
@@ -185,6 +141,50 @@ def renumber(
 
     make_changes(chapter_changes)
     make_changes(appendix_changes)
+
+
+@cli.command()
+def e_validate_code_paths(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
+    """
+    Verify that code path comment tags are corrects.
+    """
+
+    if filename:
+        validate_codepath_tags(Path(filename))
+    else:
+        for md in [
+            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
+        ]:
+            validate_codepath_tags(md)
+
+
+@cli.command()
+def f_insert_code_paths(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
+    """
+    Insert code path comment tag in a file that doesn't have one.
+    """
+
+    if filename:
+        insert_codepath_tags(Path(filename))
+    else:
+        for md in [
+            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
+        ]:
+            insert_codepath_tags(md)
 
 
 def main():

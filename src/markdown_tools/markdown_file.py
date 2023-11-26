@@ -257,17 +257,15 @@ class Comment:
 def remove_subpath(full_path: str, rest_of_path: str) -> str:
     _full_path = Path(full_path)
     _rest_of_path = Path(rest_of_path)
+    print(f"{_full_path = }")
+    print(f"{_rest_of_path = }")
     try:
-        # Attempt to get the relative path
-        # This will succeed if rest_of_path is a suffix of full_path
-        relative_path = _full_path.relative_to(
-            _full_path.parent.joinpath(_rest_of_path).parent
-        )
+        # This will succeed if rest_of_path is a suffix of full_path:
+        relative_path = _rest_of_path.relative_to(_full_path)
+        print(f"{relative_path = }")
         return relative_path.as_posix()
-    except ValueError:
-        raise typer.Exit(
-            f"{rest_of_path} is not at the end of {full_path}"  # type: ignore
-        )
+    except Exception as e:
+        raise typer.Exit(e)  # type: ignore
 
 
 @dataclass
@@ -307,65 +305,77 @@ class CodePath:
         Check that this CodePath's `path` + source_code.source_file_name exists.
         """
         assert self.path, f"Cannot validate empty path in:\n{self}"
+
         start_path = Path(self.path)
         assert (
             start_path.exists()
         ), f"Starting path {start_path.as_posix()} does not exist"
+        # Exact path by comgining the two:
         full_path = start_path / source_code.source_file_name
         if full_path.exists():
             return full_path
         return None
 
-    def new_adjusted(self, source_code: SourceCode) -> "CodePath":
+    @staticmethod
+    def new_based_on(source_code: SourceCode) -> "CodePath":
         """
-        Use this CodePath to create a new corrected one based on the SourceCode argument.
-        Note: Presumably the current CodePath already didn't work for this SourceCode.
+        Create a new CodePath based on the SourceCode argument.
+        The new CodePath contains a proper `path:` for source_code.
         """
-        if self.validate(source_code):
-            return self.clone()  # It works, no changes needed
-        assert self.path is not None
-        start = Path(cast(str, self.path))
-        assert (
-            start.exists()
-        ), f"Starting path {start.as_posix()} does not exist"
+
+        def remove_suffix(original: str, suffix: str) -> str:
+            if original.endswith(suffix):
+                return original[: -len(suffix)]
+            else:
+                return original
+
+        start = Path(starting_code_path[source_code.language])
+        assert start.exists(), f"Doesn't exist: {start.as_posix()}"
         try:
-            full_path = next(
-                start.rglob(source_code.source_file_name)
+            full_path = (
+                next(  # First one; exception if none are found
+                    start.rglob(source_code.source_file_name)
+                )
             )
-            adjusted_code_path = remove_subpath(
+            print(f"full_path = {full_path.as_posix()}")
+
+            adjusted_code_path: str = remove_suffix(
                 full_path.as_posix(), source_code.source_file_name
             )
-            return self.clone(adjusted_code_path)
-        except Exception as e:
-            raise typer.Exit(
-                f"Cannot created adjusted {source_code.source_file_name}\n"
-                f"using {self.path}\n{e}"  # type: ignore
-            )
-
-    def clone(self, path: str = "") -> "CodePath":
-        if not path:
+            print(f"{adjusted_code_path = }")
             return CodePath(
-                Comment(self.comment.md_source, self.comment.comment)
+                Comment(
+                    source_code.md_source,
+                    ["%%\n", f"path: {adjusted_code_path}\n", "%%\n"],
+                )
             )
-        return CodePath(
-            Comment(
-                self.comment.md_source,
-                ["%%\n", f"path: {path}\n", "%%"],
-            )
-        )
+        except Exception as e:
+            raise typer.Exit(e)  # type: ignore
 
-    @staticmethod
-    def new(md_file: "MarkdownFile", path: Path) -> "CodePath":
-        "Create a CodePath from Path"
-        md_file.md_source.assert_true(
-            path.exists(), f"{path} doesn't exist"
-        )
-        comment: List[str] = [
-            "%%\n",
-            f"path: {path.as_posix()}\n",
-            "%%\n",
-        ]
-        return CodePath(Comment(md_file.md_source, comment))
+    # def clone(self, path: str = "") -> "CodePath":
+    #     if not path:
+    #         return CodePath(
+    #             Comment(self.comment.md_source, self.comment.comment)
+    #         )
+    #     return CodePath(
+    #         Comment(
+    #             self.comment.md_source,
+    #             ["%%\n", f"path: {path}\n", "%%\n"],
+    #         )
+    #     )
+
+    # @staticmethod
+    # def new(md_file: "MarkdownFile", path: str) -> "CodePath":
+    #     "Create a CodePath from Path"
+    #     md_file.md_source.assert_true(
+    #         Path(path).exists(), f"{path} doesn't exist"
+    #     )
+    #     comment: List[str] = [
+    #         "%%\n",
+    #         f"path: {Path(path).as_posix()}\n",
+    #         "%%\n",
+    #     ]
+    #     return CodePath(Comment(md_file.md_source, comment))
 
     def __repr__(self) -> str:
         return repr(self.comment)
@@ -416,18 +426,17 @@ class MarkdownFile:
         self.name_already_displayed = True
         print(separator(self.file_path.name, "-"), end=end)
 
-    def write_new_file(self, file_path: Path):
+    def write_new_file(self, file_path: Path) -> None:
         # assert not file_path.exists()
         file_path.write_text(
             "".join([repr(section) for section in self.contents]),
             encoding="utf-8",
         )
 
-    def __contains__(self, item: MarkdownPart) -> bool:
+    def contains(self, item: MarkdownPart) -> bool:
         result = [
-            part for part in self.contents if isinstance(part, item)
+            part for part in self.contents if isinstance(part, item)  # type: ignore
         ]
-        # print(f"__contains__({self.file_path}, {item}): {result}")
         return bool(result)
 
     def __getitem__(self, index: int):
