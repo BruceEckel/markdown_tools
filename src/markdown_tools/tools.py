@@ -19,6 +19,7 @@ import platform
 
 from markdown_tools.check_components import (
     compare_listings_to_source_files,
+    update_listings,
 )
 
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
@@ -97,7 +98,26 @@ def c_listings(
 
 
 @cli.command()
-def d_renumber(
+def d_update_listings(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
+    """
+    Updates code listings from source code files.
+    """
+    if filename:
+        update_listings(Path(filename))
+    else:
+        for md in Path(".").glob("*.md"):
+            update_listings(md)
+
+
+@cli.command()
+def e_renumber(
     go: Annotated[
         Optional[str],
         typer.Argument(help="'go': perform the changes"),
@@ -138,7 +158,7 @@ def d_renumber(
 
 
 @cli.command()
-def e_validate_code_paths(
+def f_validate_code_paths(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -159,7 +179,7 @@ def e_validate_code_paths(
 
 
 @cli.command()
-def f_insert_code_paths(
+def g_insert_code_paths(
     filename: Annotated[
         Optional[str],
         typer.Argument(
