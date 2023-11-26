@@ -13,8 +13,8 @@ def check_code_listings(md: Path):
     md_file = MarkdownFile(md)
     for listing in md_file.code_listings():
         assert isinstance(listing, SourceCode)
-        r = check_code_block(listing)
-        if r:
+
+        if r := check_code_block(listing):
             md_file.display_name_once()
             print(r)
 

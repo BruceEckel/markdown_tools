@@ -310,7 +310,7 @@ class CodePath:
         assert (
             start_path.exists()
         ), f"Starting path {start_path.as_posix()} does not exist"
-        # Exact path by comgining the two:
+        # Exact path by combining the two:
         full_path = start_path / source_code.source_file_name
         if full_path.exists():
             return full_path
@@ -337,16 +337,14 @@ class CodePath:
                     start.rglob(source_code.source_file_name)
                 )
             )
-            print(f"full_path = {full_path.as_posix()}")
-
-            adjusted_code_path: str = remove_suffix(
+            code_path: str = remove_suffix(
                 full_path.as_posix(), source_code.source_file_name
             )
-            print(f"{adjusted_code_path = }")
+            print(f"{code_path = }")
             return CodePath(
                 Comment(
                     source_code.md_source,
-                    ["%%\n", f"path: {adjusted_code_path}\n", "%%\n"],
+                    ["%%\n", f"path: {code_path}\n", "%%\n"],
                 )
             )
         except Exception as e:

@@ -17,9 +17,7 @@ from markdown_tools import (
 from pathlib import Path
 import platform
 
-
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
-
 
 cli = typer.Typer(
     no_args_is_help=True,
@@ -38,9 +36,8 @@ def a_check(
     ] = None
 ):
     """
-    Validates Markdown files.
+    Basic validation of Markdown files.
     """
-
     for tmp_file in Path(".").glob("*.tmp.md"):
         print(f"Removing {tmp_file.name}")
         tmp_file.unlink()
@@ -69,12 +66,6 @@ def b_check_comments(
     """
     List parsed comments
     """
-
-    def _check(md: Path):
-        print(f"{md.name} ", end="")
-        assert md.exists(), f"{md} does not exist"
-        print(f"[{check_markdown(md)}]")
-
     if filename:
         check_markdown_comments(Path(filename))
     else:
@@ -94,7 +85,6 @@ def c_listings(
     """
     Validates code listings within Markdown files.
     """
-
     if filename:
         check_code_listings(Path(filename))
     else:
@@ -153,9 +143,8 @@ def e_validate_code_paths(
     ] = None
 ):
     """
-    Verify that code path comment tags are corrects.
+    Verify code path comment tags are correct.
     """
-
     if filename:
         validate_codepath_tags(Path(filename))
     else:
@@ -177,7 +166,6 @@ def f_insert_code_paths(
     """
     Insert code path comment tag in a file that doesn't have one.
     """
-
     if filename:
         insert_codepath_tags(Path(filename))
     else:

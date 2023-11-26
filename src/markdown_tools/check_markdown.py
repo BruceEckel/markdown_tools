@@ -9,7 +9,6 @@ def check_markdown(md: Path):
     markdown = MarkdownFile(md)
     for code_path in markdown.code_paths():
         print(f"\npath: {code_path.path}")
-
     # Regenerate markdown file into memory:
     new_markdown = StringIO()
     new_markdown.write(
@@ -20,10 +19,6 @@ def check_markdown(md: Path):
     if new_markdown.read() == md.read_text(encoding="utf-8"):
         return "OK"
     else:
-        # Path(md.name + ".mtmp").write_text(
-        #     "".join([repr(section) for section in markdown]),
-        #     encoding="utf-8",
-        # )
         comparison_file_path = markdown.file_path.with_suffix(
             ".tmp.md"
         )
