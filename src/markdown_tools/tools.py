@@ -17,6 +17,10 @@ from markdown_tools import (
 from pathlib import Path
 import platform
 
+from markdown_tools.check_components import (
+    compare_listings_to_source_files,
+)
+
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
 
 cli = typer.Typer(
@@ -86,10 +90,10 @@ def c_listings(
     Validates code listings within Markdown files.
     """
     if filename:
-        check_code_listings(Path(filename))
+        compare_listings_to_source_files(Path(filename))
     else:
         for md in Path(".").glob("*.md"):
-            check_code_listings(md)
+            compare_listings_to_source_files(md)
 
 
 @cli.command()

@@ -1,7 +1,7 @@
 #: markdown_file.py
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List, Union, TypeAlias, cast
+from typing import Iterator, List, Tuple, Union, TypeAlias, cast
 import typer
 
 
@@ -425,7 +425,6 @@ class MarkdownFile:
         print(separator(self.file_path.name, "-"), end=end)
 
     def write_new_file(self, file_path: Path) -> None:
-        # assert not file_path.exists()
         file_path.write_text(
             "".join([repr(section) for section in self.contents]),
             encoding="utf-8",
@@ -464,6 +463,13 @@ class MarkdownFile:
     ) -> Iterator[MarkdownPart]:
         return iter(self.contents)
 
+    def comments(self) -> List[Comment | CodePath]:
+        return [
+            part
+            for part in self
+            if isinstance(part, Comment) or isinstance(part, CodePath)
+        ]
+
     def code_listings(self) -> List[SourceCode]:
         return [part for part in self if isinstance(part, SourceCode)]
 
@@ -475,6 +481,26 @@ class MarkdownFile:
             if not part.language == "text" and not part.ignore
         ]
 
+    def code_path_and_source_code(
+        self,
+    ) -> Iterator[Tuple[CodePath, SourceCode]]:
+        """
+        Returns most recent CodePath together with next SourceCode
+        """
+        code_path = None
+        for part in self:
+            if isinstance(part, CodePath):
+                code_path = part
+            elif (
+                isinstance(part, SourceCode)
+                and not part.language == "text"
+                and not part.ignore
+            ):
+                if code_path is not None:
+                    yield (code_path, part)
+                else:
+                    raise typer.Exit("Error: code_path is None")  # type: ignore
+
     def code_paths(self) -> List[CodePath]:
         return [part for part in self if isinstance(part, CodePath)]
 
@@ -484,10 +510,3 @@ class MarkdownFile:
         if self.code_paths():
             return False  # Already exists (TODO: might be url: and not :path)
         return True
-
-    def comments(self) -> List[Comment | CodePath]:
-        return [
-            part
-            for part in self
-            if isinstance(part, Comment) or isinstance(part, CodePath)
-        ]
