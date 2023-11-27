@@ -1,4 +1,4 @@
-# check_components.py
+# update_listings.py
 from pathlib import Path
 from markdown_tools import MarkdownFile, SourceCode, Comment, CodePath
 
@@ -14,14 +14,14 @@ def compare_listings_to_source_files(md: Path):
             full_path.exists()
         ), f"ERROR: {full_path.as_posix()} does not exist"
         print(f"{full_path.as_posix()} ", end="")
-        source_file = full_path.read_text(encoding="utf-8")
-        if source_file == source_code.code:
+        source_file = SourceCode.from_source_file(full_path)
+        if source_file == source_code:
             print("[MATCH]")
         else:
             print("[NO]")
-            print("Listing:\n", source_code.code)
+            print("Listing:\n", source_code)
             print("*" * 50)
-            print("Original file:\n", source_file)
+            print("Source file:\n", source_file)
             print("^" * 50)
 
 
@@ -57,7 +57,7 @@ def check_code_listings(md: Path):
             print(r)
 
 
-def check_markdown_comments(md: Path):
+def display_markdown_comments(md: Path):
     print(f"{md}:")
     for comment in MarkdownFile(md).comments():
         assert isinstance(comment, Comment) or isinstance(

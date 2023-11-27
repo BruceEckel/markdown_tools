@@ -5,11 +5,12 @@ from typing import Iterator, List, Tuple, Union, TypeAlias, cast
 import typer
 
 code_types = {  # TODO use this everywhere
-    "python": ("#", ".py"),
-    "rust": ("//", ".rs"),
-    "go": ("//", ".go"),
-    "text": ("", ""),
+    ".py": ("python", "#"),
+    ".rs": ("rust", "//"),
+    ".go": ("go", "//"),
 }
+
+block_types = {**code_types, ".txt": ("text", "")}
 
 starting_code_path = {  # Default search paths for languages
     "python": "C:/git/python-experiments",
@@ -48,6 +49,8 @@ class MarkdownSourceText:
         self._assert_true(
             not self.file_path.is_dir(), "is a directory"
         )
+        if self.file_path.suffix in code_types:
+            return  # For SourceCode.from_source_file()
         self._assert_true(
             self.file_path.suffix == ".md", "does not end with '.md'"
         )
@@ -199,12 +202,27 @@ class SourceCode:
         source_file: Path,
     ) -> "SourceCode":
         assert (
-            source_file.exists()
-        ), f"[FAIL] from_source_file(): {source_file} does not exist"
-        code_lines: List[str] = source_file.read_text(
-            encoding="utf-8"
-        ).splitlines(True)
-        return SourceCode("".join(code_lines), md_source)
+            source_file.exists() and source_file.is_file()
+        ), f"{source_file} does not exist"
+        print(f"{source_file.suffix = }")
+        print(f"{code_types.keys() = }")
+        assert (
+            source_file.suffix in code_types.keys()
+        ), f"{source_file} must be a source code file"
+        return SourceCode(
+            f"```{code_types[source_file.suffix]}"
+            + source_file.read_text(encoding="utf-8")
+            + "```",
+            MarkdownSourceText(
+                source_file
+            ),  # Hack: creates a dummy file
+        )
+
+    def __eq__(self, other):
+        # Check if 'other' is of the same type
+        if isinstance(other, SourceCode):
+            return self.code == other.code
+        return False
 
     def __repr__(self) -> str:
         def ignore_marker():

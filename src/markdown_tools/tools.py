@@ -7,8 +7,7 @@ import typer
 from typing import List, Optional
 from typing_extensions import Annotated
 from markdown_tools import (
-    check_code_listings,
-    check_markdown_comments,
+    display_markdown_comments,
     check_markdown,
     insert_codepath_tags,
     validate_codepath_tags,
@@ -17,7 +16,7 @@ from markdown_tools import (
 from pathlib import Path
 import platform
 
-from markdown_tools.check_components import (
+from markdown_tools.update_listings import (
     compare_listings_to_source_files,
     update_listings,
 )
@@ -72,10 +71,10 @@ def b_check_comments(
     List parsed comments
     """
     if filename:
-        check_markdown_comments(Path(filename))
+        display_markdown_comments(Path(filename))
     else:
         for md in Path(".").glob("*.md"):
-            check_markdown_comments(md)
+            display_markdown_comments(md)
 
 
 @cli.command()

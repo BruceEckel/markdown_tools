@@ -14,7 +14,10 @@ from .insert_codepath_tags import (
     insert_codepath_tags,
     validate_codepath_tags,
 )
-from .check_components import (
+from .update_listings import (
+    check_code_block,
     check_code_listings,
-    check_markdown_comments,
+    compare_listings_to_source_files,
+    display_markdown_comments,
+    update_listings,
 )  # noqa: F401
