@@ -1,4 +1,8 @@
 #: languages.py
+"""
+Look up language information using either the language name or
+the code file extension.
+"""
 from typing import List
 from dataclasses import dataclass
 
