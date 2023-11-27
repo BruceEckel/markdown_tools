@@ -4,10 +4,11 @@ from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias, cast
 import typer
 
-code_types = {  # TODO use this everywhere
-    ".py": ("python", "#"),
-    ".rs": ("rust", "//"),
-    ".go": ("go", "//"),
+# TODO use this everywhere
+code_types = {
+    ".py": ("python", "#", "C:/git/python-experiments"),
+    ".rs": ("rust", "//", "C:/git/rust-experiments"),
+    ".go": ("go", "//", "C:/git/go-experiments"),
 }
 
 block_types = {**code_types, ".txt": ("text", "")}
