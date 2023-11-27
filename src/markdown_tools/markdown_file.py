@@ -157,12 +157,18 @@ class SourceCode:
                 pass
 
     def _validate_filename(
-        self, line: str, comment: str, file_ext: str
+        self, line: str, comment_marker: str, file_ext: str
     ):
-        assert line.startswith(comment) and line.endswith(
-            file_ext
-        ), f"First line must contain source file name in {self.original_code_block}"
-        self.source_file_name = line[len(comment) :].strip()
+        self.md_source.assert_true(
+            line.startswith(comment_marker)
+            and line.endswith(file_ext),
+            f"First line must contain source file name in {self.original_code_block}",
+        )
+        self.source_file_name = line[len(comment_marker) :].strip()
+        self.md_source.assert_true(
+            bool(self.source_file_name),
+            f"Source file name cannot be empty in {self.original_code_block}",
+        )
 
     @staticmethod
     def parse(
