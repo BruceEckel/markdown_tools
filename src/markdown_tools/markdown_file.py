@@ -4,6 +4,12 @@ from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias, cast
 import typer
 
+code_types = {  # TODO use this everywhere
+    "python": ("#", ".py"),
+    "rust": ("//", ".rs"),
+    "go": ("//", ".go"),
+    "text": ("", ""),
+}
 
 starting_code_path = {  # Default search paths for languages
     "python": "C:/git/python-experiments",
@@ -186,6 +192,18 @@ class SourceCode:
                 )
                 break
 
+        return SourceCode("".join(code_lines), md_source)
+
+    @staticmethod
+    def from_source_file(
+        source_file: Path,
+    ) -> "SourceCode":
+        assert (
+            source_file.exists()
+        ), f"[FAIL] from_source_file(): {source_file} does not exist"
+        code_lines: List[str] = source_file.read_text(
+            encoding="utf-8"
+        ).splitlines(True)
         return SourceCode("".join(code_lines), md_source)
 
     def __repr__(self) -> str:
