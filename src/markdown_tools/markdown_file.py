@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias
-from markdown_tools import Languages, LanguageInfo
+from markdown_tools import LANGUAGES, LanguageInfo
 import typer
 
 
@@ -36,7 +36,7 @@ class MarkdownScanner:
         self._assert_true(
             not self.file_path.is_dir(), "is a directory"
         )
-        if self.file_path.suffix in Languages:
+        if self.file_path.suffix in LANGUAGES:
             return  # For SourceCode.from_source_file() [Hack]
         self._assert_true(
             self.file_path.suffix == ".md", "does not end with '.md'"
@@ -143,11 +143,11 @@ class SourceCode:
             return
 
         self.scanner.assert_true(
-            self.language in Languages,
+            self.language in LANGUAGES,
             f"{self.language} is not in Languages in:\n{self.original_code_block}",
         )
 
-        language: LanguageInfo = Languages[self.language]
+        language: LanguageInfo = LANGUAGES[self.language]
         self.scanner.assert_true(
             filename_line.startswith(language.comment_symbol)
             and filename_line.endswith(language.file_extension),
@@ -212,10 +212,10 @@ class SourceCode:
         ), f"{source_file} does not exist"
         print(f"{source_file.suffix = }")
         assert (
-            source_file.suffix in Languages
+            source_file.suffix in LANGUAGES
         ), f"{source_file} must be a source code file"
         return SourceCode(
-            f"```{Languages[source_file.suffix]}"
+            f"```{LANGUAGES[source_file.suffix]}"
             + source_file.read_text(encoding="utf-8")
             + "```",
             MarkdownScanner(
@@ -376,7 +376,7 @@ class CodePath:
             else:
                 return original
 
-        start = Path(Languages[source_code.language].start_search)
+        start = Path(LANGUAGES[source_code.language].start_search)
         assert start.exists(), f"Doesn't exist: {start.as_posix()}"
         try:
             full_path = (

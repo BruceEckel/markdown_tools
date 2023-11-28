@@ -3,7 +3,6 @@ from markdown_tools.markdown_file import MarkdownScanner
 from pathlib import Path
 from markdown_tools.markdown_file import MarkdownFile
 from markdown_tools.markdown_file import Markdown
-from markdown_tools.markdown_file import SourceCode
 from markdown_tools.markdown_file import CodePath
 
 
@@ -48,9 +47,7 @@ class TestParse:
     # Parses an empty markdown file
     def test_parse_empty_file(self):
         # Create an empty markdown file
-        with open("test.md", "w") as f:
-            pass
-
+        Path("test.md").touch()
         md_source = MarkdownScanner(Path("test.md"))
         parsed_contents = list(MarkdownFile.parse(md_source))
         assert len(parsed_contents) == 0

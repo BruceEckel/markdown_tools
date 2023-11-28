@@ -1,8 +1,4 @@
 #: languages.py
-"""
-Look up language information using either the language name or
-the code file extension.
-"""
 from typing import List
 from dataclasses import dataclass
 
@@ -22,11 +18,12 @@ _languages: List[LanguageInfo] = [
 ]
 
 
-class LanguageMeta(type):
-    # Subscripting & 'in' for the Language class
+class Languages:
+    def __init__(self, languages: List[LanguageInfo]):
+        self._languages = languages
 
-    def __getitem__(cls, key: str):
-        for language_info in cls._code_types:  # type:ignore
+    def __getitem__(self, key: str) -> LanguageInfo:
+        for language_info in self._languages:
             if (
                 language_info.language == key
                 or language_info.file_extension == key
@@ -34,19 +31,17 @@ class LanguageMeta(type):
                 return language_info
         raise KeyError(f"No LanguageInfo found for key: {key}")
 
-    def __contains__(cls, key: str) -> bool:
+    def __contains__(self, key: str) -> bool:
         return any(
             key in (lang.language, lang.file_extension)
-            for lang in cls._code_types  # type:ignore
+            for lang in self._languages
         )
 
 
-class Languages(metaclass=LanguageMeta):
-    _code_types: List[LanguageInfo] = _languages
-
+LANGUAGES = Languages(_languages)  # Singleton
 
 if __name__ == "__main__":
-    print(Languages["python"])
-    print(Languages[".py"])
-    print("python" in Languages)
-    print(".py" in Languages)
+    print(LANGUAGES["python"])  # Using language name
+    print(LANGUAGES[".py"])  # Using file extension
+    print("python" in LANGUAGES)
+    print(".py" in LANGUAGES)
