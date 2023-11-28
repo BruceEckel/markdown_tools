@@ -1,8 +1,8 @@
 # markdown_tools/__init__.py
 # Why doesn't this work?
 from .languages import LanguageInfo, LANGUAGES  # noqa: F401
+from .util import separator, ErrorReporter  # noqa: F401
 from .markdown_file import (  # noqa: F401
-    separator,
     MarkdownScanner,
     MarkdownFile,
     Markdown,

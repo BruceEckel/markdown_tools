@@ -22,10 +22,10 @@ _languages: List[LanguageInfo] = [
 
 @dataclass(frozen=True)
 class Languages:
-    _languages: List[LanguageInfo]
+    languages: List[LanguageInfo]
 
     def __getitem__(self, key: str) -> LanguageInfo:
-        for language_info in self._languages:
+        for language_info in self.languages:
             if (
                 key == language_info.language
                 or key == language_info.file_extension
@@ -36,14 +36,14 @@ class Languages:
     def __contains__(self, key: str) -> bool:
         return any(
             key in (lang.language, lang.file_extension)
-            for lang in self._languages
+            for lang in self.languages
         )
 
 
 LANGUAGES = Languages(_languages)  # Singleton
 
 if __name__ == "__main__":
-    print(LANGUAGES["python"])  # Using language name
-    print(LANGUAGES[".py"])  # Using file extension
+    print(LANGUAGES["python"])  # Index by language name
+    print(LANGUAGES[".py"])  # Index by file extension
     print("python" in LANGUAGES)
     print(".py" in LANGUAGES)
