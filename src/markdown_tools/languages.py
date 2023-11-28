@@ -9,24 +9,26 @@ class LanguageInfo:
     file_extension: str
     comment_symbol: str
     start_search: str
+    source_file_name_required: bool = True
 
 
 _languages: List[LanguageInfo] = [
     LanguageInfo("python", ".py", "#", "C:/git/python-experiments"),
     LanguageInfo("rust", ".rs", "//", "C:/git/rust-experiments"),
     LanguageInfo("go", ".go", "//", "C:/git/go-experiments"),
+    LanguageInfo("text", ".txt", "", "", False),
 ]
 
 
+@dataclass(frozen=True)
 class Languages:
-    def __init__(self, languages: List[LanguageInfo]):
-        self._languages = languages
+    _languages: List[LanguageInfo]
 
     def __getitem__(self, key: str) -> LanguageInfo:
         for language_info in self._languages:
             if (
-                language_info.language == key
-                or language_info.file_extension == key
+                key == language_info.language
+                or key == language_info.file_extension
             ):
                 return language_info
         raise KeyError(f"No LanguageInfo found for key: {key}")

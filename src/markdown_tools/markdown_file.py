@@ -119,7 +119,7 @@ class SourceCode:
 
     original_code_block: str
     scanner: MarkdownScanner
-    language: str = ""
+    language_name: str = ""
     source_file_name: str = ""
     code: str = ""
     ignore: bool = False
@@ -131,23 +131,26 @@ class SourceCode:
 
         self.ignore = tagline.endswith("!")
         tagline = tagline.rstrip("!")
-        self.language = tagline[3:].strip()
+        self.language_name = tagline[3:].strip()
         self.code = "".join(lines[1:-1])
 
         self.scanner.assert_true(
-            bool(self.language),
+            bool(self.language_name),
             f"Language cannot be empty in {self.original_code_block}",
         )
 
         if self.ignore:
             return
-
+        # print(f"{self.language_name = }")
+        # print(f"{LANGUAGES = }")
         self.scanner.assert_true(
-            self.language in LANGUAGES,
-            f"{self.language} is not in Languages in:\n{self.original_code_block}",
+            self.language_name in LANGUAGES,
+            f"\n{self.language_name} is not in LANGUAGES in:\n{self.original_code_block}",
         )
 
-        language: LanguageInfo = LANGUAGES[self.language]
+        language: LanguageInfo = LANGUAGES[self.language_name]
+        if not language.source_file_name_required:
+            return  # 'text' block and similar
         self.scanner.assert_true(
             filename_line.startswith(language.comment_symbol)
             and filename_line.endswith(language.file_extension),
@@ -210,12 +213,12 @@ class SourceCode:
         assert (
             source_file.exists() and source_file.is_file()
         ), f"{source_file} does not exist"
-        print(f"{source_file.suffix = }")
+        # print(f"{source_file.suffix = }")
         assert (
             source_file.suffix in LANGUAGES
         ), f"{source_file} must be a source code file"
         return SourceCode(
-            f"```{LANGUAGES[source_file.suffix]}"
+            f"```{LANGUAGES[source_file.suffix].language}\n"
             + source_file.read_text(encoding="utf-8")
             + "```",
             MarkdownScanner(
@@ -234,7 +237,7 @@ class SourceCode:
             return " !" if self.ignore else ""
 
         return (
-            f"```{self.language}{ignore_marker()}\n"
+            f"```{self.language_name}{ignore_marker()}\n"
             + "".join(self.code)
             + "```\n"
         )
@@ -244,7 +247,7 @@ class SourceCode:
             separator("SourceCode")
             + repr(self)
             + f"{self.source_file_name = }\n"
-            + f"{self.language = } {self.ignore = }"
+            + f"{self.language_name = } {self.ignore = }"
         )
 
 
@@ -304,12 +307,12 @@ class Comment:
 def remove_subpath(full_path: str, rest_of_path: str) -> str:
     _full_path = Path(full_path)
     _rest_of_path = Path(rest_of_path)
-    print(f"{_full_path = }")
-    print(f"{_rest_of_path = }")
+    # print(f"{_full_path = }")
+    # print(f"{_rest_of_path = }")
     try:
         # This will succeed if rest_of_path is a suffix of full_path:
         relative_path = _rest_of_path.relative_to(_full_path)
-        print(f"{relative_path = }")
+        # print(f"{relative_path = }")
         return relative_path.as_posix()
     except Exception as e:
         raise typer.Exit(e)  # type: ignore
@@ -376,7 +379,9 @@ class CodePath:
             else:
                 return original
 
-        start = Path(LANGUAGES[source_code.language].start_search)
+        start = Path(
+            LANGUAGES[source_code.language_name].start_search
+        )
         assert start.exists(), f"Doesn't exist: {start.as_posix()}"
         try:
             full_path = (
@@ -387,7 +392,7 @@ class CodePath:
             code_path: str = remove_suffix(
                 full_path.as_posix(), source_code.source_file_name
             )
-            print(f"{code_path = }")
+            # print(f"{code_path = }")
             return CodePath(
                 Comment(
                     source_code.scanner,
@@ -525,7 +530,7 @@ class MarkdownFile:
         return [
             part
             for part in self.code_listings()
-            if not part.language == "text" and not part.ignore
+            if not part.language_name == "text" and not part.ignore
         ]
 
     def code_path_and_source_code(
@@ -540,7 +545,7 @@ class MarkdownFile:
                 code_path = part
             elif (
                 isinstance(part, SourceCode)
-                and not part.language == "text"
+                and not part.language_name == "text"
                 and not part.ignore
             ):
                 if code_path is not None:

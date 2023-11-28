@@ -11,7 +11,7 @@ def validate_codepath_tags(md: Path):
             code_path = part  # Most recent CodePath
         if (
             isinstance(part, SourceCode)
-            and not part.language == "text"
+            and not part.language_name == "text"
             and not part.ignore
         ):
             md_file.display_name_once()
@@ -45,7 +45,7 @@ def insert_codepath_tags(md: Path):
             continue
         if (
             isinstance(part, SourceCode)
-            and part.language != "text"
+            and part.language_name != "text"
             and not part.ignore
         ):
             source_code: SourceCode = part

@@ -43,9 +43,9 @@ def update_listings(md: Path):
 
 
 def check_code_block(scl: SourceCode) -> str | None:
-    if scl.language == "text" or scl.ignore:
+    if scl.language_name == "text" or scl.ignore:
         return None
-    return f"{scl.language}: {scl.source_file_name}"
+    return f"{scl.language_name}: {scl.source_file_name}"
 
 
 def check_code_listings(md: Path):
