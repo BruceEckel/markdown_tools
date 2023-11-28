@@ -20,7 +20,7 @@ class MarkdownScanner:
     lines: List[str] = field(default_factory=list)
     current_line_number: int = 0
     start_of_block: int = 0  # For error messages ## Remove
-    err: ClassVar[ErrorReporter] = ErrorReporter()
+    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def _assert_true(self, condition: bool, msg: str) -> None:
         if not condition:
@@ -76,7 +76,7 @@ class Markdown:
 
     scanner: MarkdownScanner
     text: str
-    err: ClassVar[ErrorReporter] = ErrorReporter()
+    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __repr__(self) -> str:
         return f"{self.text}"
@@ -119,7 +119,7 @@ class SourceCode:
     source_file_name: str = ""
     code: str = ""
     ignore: bool = False
-    err: ClassVar[ErrorReporter] = ErrorReporter()
+    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __post_init__(self) -> None:
         lines = self.original_code_block.splitlines(True)
@@ -239,7 +239,7 @@ class Comment:
 
     scanner: MarkdownScanner
     comment: List[str]
-    err: ClassVar[ErrorReporter] = ErrorReporter()
+    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __repr__(self) -> str:
         return "".join(self.comment)
@@ -304,7 +304,7 @@ class CodePath:
     comment: Comment
     path: str | None = None
     url: str | None = None
-    err: ClassVar[ErrorReporter] = ErrorReporter()
+    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __post_init__(self):
         def exists(id: str) -> bool:
@@ -393,7 +393,7 @@ class MarkdownFile:
     scanner: MarkdownScanner
     contents: List[MarkdownPart]
     name_already_displayed: bool = False
-    err: ClassVar[ErrorReporter] = ErrorReporter()
+    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __init__(self, file_path: Path):
         assert file_path.exists()
