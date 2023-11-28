@@ -15,7 +15,7 @@ class LanguageInfo:
     start_search: str
 
 
-code_types: List[LanguageInfo] = [
+_languages: List[LanguageInfo] = [
     LanguageInfo("python", ".py", "#", "C:/git/python-experiments"),
     LanguageInfo("rust", ".rs", "//", "C:/git/rust-experiments"),
     LanguageInfo("go", ".go", "//", "C:/git/go-experiments"),
@@ -23,7 +23,7 @@ code_types: List[LanguageInfo] = [
 
 
 class LanguageMeta(type):
-    # Provide subscripting & 'in' for the Language class
+    # Subscripting & 'in' for the Language class
 
     def __getitem__(cls, key: str):
         for language_info in cls._code_types:  # type:ignore
@@ -41,12 +41,12 @@ class LanguageMeta(type):
         )
 
 
-class Language(metaclass=LanguageMeta):
-    _code_types: List[LanguageInfo] = code_types
+class Languages(metaclass=LanguageMeta):
+    _code_types: List[LanguageInfo] = _languages
 
 
 if __name__ == "__main__":
-    print(Language["python"])
-    print(Language[".py"])
-    print("python" in Language)
-    print(".py" in Language)
+    print(Languages["python"])
+    print(Languages[".py"])
+    print("python" in Languages)
+    print(".py" in Languages)

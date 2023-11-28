@@ -1,23 +1,9 @@
 #: markdown_file.py
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List, Tuple, Union, TypeAlias, cast
+from typing import Iterator, List, Tuple, Union, TypeAlias
+from markdown_tools import Languages, LanguageInfo
 import typer
-
-# TODO use this everywhere
-code_types = {
-    ".py": ("python", "#", "C:/git/python-experiments"),
-    ".rs": ("rust", "//", "C:/git/rust-experiments"),
-    ".go": ("go", "//", "C:/git/go-experiments"),
-}
-
-block_types = {**code_types, ".txt": ("text", "")}
-
-starting_code_path = {  # Default search paths for languages
-    "python": "C:/git/python-experiments",
-    "rust": "C:/git/rust-experiments",
-    "go": "C:/git/go-experiments",
-}
 
 
 def separator(id: str, sep_char: str = "-") -> str:
@@ -28,7 +14,7 @@ def separator(id: str, sep_char: str = "-") -> str:
 
 
 @dataclass
-class MarkdownSourceText:
+class MarkdownScanner:
     """
     Delivers the markdown file a line at a time.
     Keeps track of the current line.
@@ -43,15 +29,15 @@ class MarkdownSourceText:
 
     def _assert_true(self, condition: bool, msg: str) -> None:
         if not condition:
-            raise typer.Exit(f"ERROR [{self.file_path}] " + msg)  # type: ignore
+            raise typer.Exit(f'[ERROR] "{self.file_path}" ' + msg)  # type: ignore
 
     def __post_init__(self):
         self._assert_true(self.file_path.exists(), "does not exist")
         self._assert_true(
             not self.file_path.is_dir(), "is a directory"
         )
-        if self.file_path.suffix in code_types:
-            return  # For SourceCode.from_source_file()
+        if self.file_path.suffix in Languages:
+            return  # For SourceCode.from_source_file() [Hack]
         self._assert_true(
             self.file_path.suffix == ".md", "does not end with '.md'"
         )
@@ -93,7 +79,7 @@ class Markdown:
     Contains a section of normal markdown text
     """
 
-    md_source: MarkdownSourceText
+    scanner: MarkdownScanner
     text: str
 
     def __repr__(self) -> str:
@@ -104,17 +90,17 @@ class Markdown:
 
     @staticmethod
     def parse(
-        md_source: MarkdownSourceText,
+        scanner: MarkdownScanner,
     ) -> "Markdown":
         # We know the current line is good:
-        text_lines = [next(md_source)]
+        text_lines = [next(scanner)]
 
-        while line := md_source.current_line():
+        while line := scanner.current_line():
             if line.startswith("```") or line.startswith("%%"):
                 break
-            text_lines.append(next(md_source))
+            text_lines.append(next(scanner))
 
-        return Markdown(md_source, "".join(text_lines))
+        return Markdown(scanner, "".join(text_lines))
 
 
 @dataclass
@@ -132,13 +118,13 @@ class SourceCode:
     """
 
     original_code_block: str
-    md_source: MarkdownSourceText
+    scanner: MarkdownScanner
     language: str = ""
     source_file_name: str = ""
     code: str = ""
     ignore: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         lines = self.original_code_block.splitlines(True)
         tagline = lines[0].strip()
         filename_line = lines[1].strip() if len(lines) > 1 else ""
@@ -148,55 +134,74 @@ class SourceCode:
         self.language = tagline[3:].strip()
         self.code = "".join(lines[1:-1])
 
-        self.md_source.assert_true(
-            self.language,
+        self.scanner.assert_true(
+            bool(self.language),
             f"Language cannot be empty in {self.original_code_block}",
         )
 
         if self.ignore:
             return
 
-        match self.language:
-            case "python":
-                self._validate_filename(filename_line, "#", ".py")
-            case "rust":
-                self._validate_filename(filename_line, "//", ".rs")
-            case "go":
-                self._validate_filename(filename_line, "//", ".go")
-            case "text":
-                pass
+        self.scanner.assert_true(
+            self.language in Languages,
+            f"{self.language} is not in Languages in:\n{self.original_code_block}",
+        )
 
-    def _validate_filename(
-        self, line: str, comment_marker: str, file_ext: str
-    ):
-        self.md_source.assert_true(
-            line.startswith(comment_marker)
-            and line.endswith(file_ext),
-            f"First line must contain source file name in {self.original_code_block}",
+        language: LanguageInfo = Languages[self.language]
+        self.scanner.assert_true(
+            filename_line.startswith(language.comment_symbol)
+            and filename_line.endswith(language.file_extension),
+            f"First line must contain source file name in:\n{self.original_code_block}",
         )
-        self.source_file_name = line[len(comment_marker) :].strip()
-        self.md_source.assert_true(
+        self.source_file_name = filename_line[
+            len(language.comment_symbol) :
+        ].strip()
+        self.scanner.assert_true(
             bool(self.source_file_name),
-            f"Source file name cannot be empty in {self.original_code_block}",
+            f"Source file name cannot be empty in:\n{self.original_code_block}",
         )
+
+    #     match self.language:
+    #         case "python":
+    #             self._validate_filename(filename_line, "#", ".py")
+    #         case "rust":
+    #             self._validate_filename(filename_line, "//", ".rs")
+    #         case "go":
+    #             self._validate_filename(filename_line, "//", ".go")
+    #         case "text":
+    #             pass
+
+    # def _validate_filename(
+    #     self, line: str, comment_marker: str, file_ext: str
+    # ):
+    #     self.scanner.assert_true(
+    #         line.startswith(comment_marker)
+    #         and line.endswith(file_ext),
+    #         f"First line must contain source file name in {self.original_code_block}",
+    #     )
+    #     self.source_file_name = line[len(comment_marker) :].strip()
+    #     self.scanner.assert_true(
+    #         bool(self.source_file_name),
+    #         f"Source file name cannot be empty in {self.original_code_block}",
+    #     )
 
     @staticmethod
     def parse(
-        md_source: MarkdownSourceText,
+        scanner: MarkdownScanner,
     ) -> "SourceCode":
-        code_lines: List[str] = [next(md_source)]
+        code_lines: List[str] = [next(scanner)]
 
-        while line := md_source.current_line():
-            code_lines.append(next(md_source))  # Include closing ```
+        while line := scanner.current_line():
+            code_lines.append(next(scanner))  # Include closing ```
             if line.startswith("```"):
                 # Closing tag must not be followed by a language:
-                md_source.assert_true(
+                scanner.assert_true(
                     len(line.strip()) == len("```"),
                     "Unclosed code block",
                 )
                 break
 
-        return SourceCode("".join(code_lines), md_source)
+        return SourceCode("".join(code_lines), scanner)
 
     @staticmethod
     def from_source_file(
@@ -206,15 +211,14 @@ class SourceCode:
             source_file.exists() and source_file.is_file()
         ), f"{source_file} does not exist"
         print(f"{source_file.suffix = }")
-        print(f"{code_types.keys() = }")
         assert (
-            source_file.suffix in code_types.keys()
+            source_file.suffix in Languages
         ), f"{source_file} must be a source code file"
         return SourceCode(
-            f"```{code_types[source_file.suffix]}"
+            f"```{Languages[source_file.suffix]}"
             + source_file.read_text(encoding="utf-8")
             + "```",
-            MarkdownSourceText(
+            MarkdownScanner(
                 source_file
             ),  # Hack: creates a dummy file
         )
@@ -259,7 +263,7 @@ class Comment:
     *exactly* `%%`
     """
 
-    md_source: MarkdownSourceText
+    scanner: MarkdownScanner
     comment: List[str]
 
     def __repr__(self) -> str:
@@ -279,22 +283,22 @@ class Comment:
 
     @staticmethod
     def parse(
-        md_source: MarkdownSourceText,
+        scanner: MarkdownScanner,
     ) -> Union["Comment", "CodePath"]:
-        comment: List[str] = [next(md_source)]  # Initial %%
+        comment: List[str] = [next(scanner)]  # Initial %%
         while True:
-            comment.append(next(md_source))
+            comment.append(next(scanner))
             if comment[-1].rstrip() == "%%":  # Closing comment marker
                 break
-            md_source.assert_true(
-                bool(md_source.current_line()),
+            scanner.assert_true(
+                bool(scanner.current_line()),
                 "Unclosed markdown comment",
             )
         batch = "".join(comment)
         if "url:" in batch or "path:" in batch:
-            return CodePath(Comment(md_source, comment))
+            return CodePath(Comment(scanner, comment))
 
-        return Comment(md_source, comment)
+        return Comment(scanner, comment)
 
 
 def remove_subpath(full_path: str, rest_of_path: str) -> str:
@@ -333,7 +337,7 @@ class CodePath:
         def exists(id: str) -> bool:
             return self.comment[1].startswith(id)
 
-        self.comment.md_source.assert_true(
+        self.comment.scanner.assert_true(
             exists("path:") or exists("url:"),
             f"Missing 'path:' or 'url:' in:\n{self}",
         )
@@ -372,7 +376,7 @@ class CodePath:
             else:
                 return original
 
-        start = Path(starting_code_path[source_code.language])
+        start = Path(Languages[source_code.language].start_search)
         assert start.exists(), f"Doesn't exist: {start.as_posix()}"
         try:
             full_path = (
@@ -386,7 +390,7 @@ class CodePath:
             print(f"{code_path = }")
             return CodePath(
                 Comment(
-                    source_code.md_source,
+                    source_code.scanner,
                     ["%%\n", f"path: {code_path}\n", "%%\n"],
                 )
             )
@@ -396,11 +400,11 @@ class CodePath:
     # def clone(self, path: str = "") -> "CodePath":
     #     if not path:
     #         return CodePath(
-    #             Comment(self.comment.md_source, self.comment.comment)
+    #             Comment(self.comment.scanner, self.comment.comment)
     #         )
     #     return CodePath(
     #         Comment(
-    #             self.comment.md_source,
+    #             self.comment.scanner,
     #             ["%%\n", f"path: {path}\n", "%%\n"],
     #         )
     #     )
@@ -408,7 +412,7 @@ class CodePath:
     # @staticmethod
     # def new(md_file: "MarkdownFile", path: str) -> "CodePath":
     #     "Create a CodePath from Path"
-    #     md_file.md_source.assert_true(
+    #     md_file.scanner.assert_true(
     #         Path(path).exists(), f"{path} doesn't exist"
     #     )
     #     comment: List[str] = [
@@ -416,7 +420,7 @@ class CodePath:
     #         f"path: {Path(path).as_posix()}\n",
     #         "%%\n",
     #     ]
-    #     return CodePath(Comment(md_file.md_source, comment))
+    #     return CodePath(Comment(md_file.scanner, comment))
 
     def __repr__(self) -> str:
         return repr(self.comment)
@@ -437,7 +441,7 @@ MarkdownPart: TypeAlias = Markdown | SourceCode | CodePath | Comment
 @dataclass
 class MarkdownFile:
     file_path: Path
-    md_source: MarkdownSourceText
+    scanner: MarkdownScanner
     contents: List[MarkdownPart]
     name_already_displayed: bool = False
 
@@ -445,21 +449,21 @@ class MarkdownFile:
         assert file_path.exists()
         assert file_path.is_file()
         self.file_path = file_path
-        self.md_source = MarkdownSourceText(self.file_path)
-        self.contents = list(MarkdownFile.parse(self.md_source))
+        self.scanner = MarkdownScanner(self.file_path)
+        self.contents = list(MarkdownFile.parse(self.scanner))
 
     @staticmethod
     def parse(
-        md_source: MarkdownSourceText,
+        scanner: MarkdownScanner,
     ) -> Iterator[MarkdownPart]:
-        while current_line := md_source.current_line():
+        while current_line := scanner.current_line():
             match current_line:
                 case line if line.startswith("```"):
-                    yield SourceCode.parse(md_source)
+                    yield SourceCode.parse(scanner)
                 case line if line.strip() == "%%":
-                    yield Comment.parse(md_source)
+                    yield Comment.parse(scanner)
                 case _:
-                    yield Markdown.parse(md_source)
+                    yield Markdown.parse(scanner)
 
     def display_name_once(self, end=""):
         if self.name_already_displayed:
