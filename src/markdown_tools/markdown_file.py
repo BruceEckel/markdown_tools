@@ -141,8 +141,6 @@ class SourceCode:
 
         if self.ignore:
             return
-        # print(f"{self.language_name = }")
-        # print(f"{LANGUAGES = }")
         self.scanner.assert_true(
             self.language_name in LANGUAGES,
             f"\n{self.language_name} is not in LANGUAGES in:\n{self.original_code_block}",
@@ -163,30 +161,6 @@ class SourceCode:
             bool(self.source_file_name),
             f"Source file name cannot be empty in:\n{self.original_code_block}",
         )
-
-    #     match self.language:
-    #         case "python":
-    #             self._validate_filename(filename_line, "#", ".py")
-    #         case "rust":
-    #             self._validate_filename(filename_line, "//", ".rs")
-    #         case "go":
-    #             self._validate_filename(filename_line, "//", ".go")
-    #         case "text":
-    #             pass
-
-    # def _validate_filename(
-    #     self, line: str, comment_marker: str, file_ext: str
-    # ):
-    #     self.scanner.assert_true(
-    #         line.startswith(comment_marker)
-    #         and line.endswith(file_ext),
-    #         f"First line must contain source file name in {self.original_code_block}",
-    #     )
-    #     self.source_file_name = line[len(comment_marker) :].strip()
-    #     self.scanner.assert_true(
-    #         bool(self.source_file_name),
-    #         f"Source file name cannot be empty in {self.original_code_block}",
-    #     )
 
     @staticmethod
     def parse(
@@ -307,12 +281,9 @@ class Comment:
 def remove_subpath(full_path: str, rest_of_path: str) -> str:
     _full_path = Path(full_path)
     _rest_of_path = Path(rest_of_path)
-    # print(f"{_full_path = }")
-    # print(f"{_rest_of_path = }")
     try:
         # This will succeed if rest_of_path is a suffix of full_path:
         relative_path = _rest_of_path.relative_to(_full_path)
-        # print(f"{relative_path = }")
         return relative_path.as_posix()
     except Exception as e:
         raise typer.Exit(e)  # type: ignore
@@ -360,7 +331,7 @@ class CodePath:
         assert (
             start_path.exists()
         ), f"Starting path {start_path.as_posix()} does not exist"
-        # Exact path by combining the two:
+        # Create exact path by combining the two:
         full_path = start_path / source_code.source_file_name
         if full_path.exists():
             return full_path
@@ -392,7 +363,6 @@ class CodePath:
             code_path: str = remove_suffix(
                 full_path.as_posix(), source_code.source_file_name
             )
-            # print(f"{code_path = }")
             return CodePath(
                 Comment(
                     source_code.scanner,
@@ -401,31 +371,6 @@ class CodePath:
             )
         except Exception as e:
             raise typer.Exit(e)  # type: ignore
-
-    # def clone(self, path: str = "") -> "CodePath":
-    #     if not path:
-    #         return CodePath(
-    #             Comment(self.comment.scanner, self.comment.comment)
-    #         )
-    #     return CodePath(
-    #         Comment(
-    #             self.comment.scanner,
-    #             ["%%\n", f"path: {path}\n", "%%\n"],
-    #         )
-    #     )
-
-    # @staticmethod
-    # def new(md_file: "MarkdownFile", path: str) -> "CodePath":
-    #     "Create a CodePath from Path"
-    #     md_file.scanner.assert_true(
-    #         Path(path).exists(), f"{path} doesn't exist"
-    #     )
-    #     comment: List[str] = [
-    #         "%%\n",
-    #         f"path: {Path(path).as_posix()}\n",
-    #         "%%\n",
-    #     ]
-    #     return CodePath(Comment(md_file.scanner, comment))
 
     def __repr__(self) -> str:
         return repr(self.comment)
@@ -526,7 +471,7 @@ class MarkdownFile:
         return [part for part in self if isinstance(part, SourceCode)]
 
     def pathed_code_listings(self) -> List[SourceCode]:
-        # Any code listings that are not explicitly ignored
+        # Any code listings that are not "text" or explicitly ignored
         return [
             part
             for part in self.code_listings()

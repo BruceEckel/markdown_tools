@@ -16,9 +16,9 @@ def compare_listings_to_source_files(md: Path):
         print(f"{full_path.as_posix()} ", end="")
         source_file = SourceCode.from_source_file(full_path)
         if source_file == source_code:
-            print("[MATCH]")
+            print("\n[MATCH]")
         else:
-            print("[NO]")
+            print("\n[NO MATCH]")
             print("Listing:\n", source_code)
             print("*" * 50)
             print("Source file:\n", source_file)
