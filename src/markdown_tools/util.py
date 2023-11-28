@@ -1,7 +1,6 @@
 #: util.py
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 import typer
 
 
@@ -14,17 +13,28 @@ def separator(id: str, sep_char: str = "-") -> str:
 
 @dataclass
 class ErrorReporter:
-    file_path: Path
-    current_line_number: Optional[int] = None
+    """
+    Only if information is available is it displayed
+    """
+
+    source_file: Path | None = None
+    # Line number starting current analysis block:
+    context_start: int | None = None
+    klass: str | None = None
+    function: str | None = None
 
     def assert_true(self, condition: bool, msg: str) -> None:
         if not condition:
-            raise typer.Exit(self.format_error_message(msg))  # type: ignore
+            raise typer.Exit(self.format_error(msg))  # type: ignore
 
-    def format_error_message(self, msg: str) -> str:
-        error_location = (
-            f'File "{self.file_path}", Line {self.current_line_number}: '
-            if self.current_line_number
-            else f'File "{self.file_path}": '
-        )
-        return error_location + msg
+    def format_error(self, msg: str) -> str:
+        _msg = "[ERROR]"
+        if cls := self.klass:
+            _msg += f" in class {cls}"
+        if fn := self.function:
+            _msg += f" in function {fn}"
+        if cs := self.context_start:
+            _msg += f" starting at line {cs}"
+        if sf := self.source_file:
+            _msg += f" in {sf}"
+        return _msg + ":\n" + msg
