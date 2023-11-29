@@ -1,5 +1,4 @@
 from typing import Any, Callable
-from pprint import pprint
 
 
 class ErrorReporter:
@@ -10,8 +9,7 @@ class ErrorReporter:
         self.logs.append(message)
 
 
-# Global instance
-error_reporter = ErrorReporter()
+error_reporter = ErrorReporter()  # File scope
 
 
 class LoggingMeta(type):
@@ -26,17 +24,15 @@ class LoggingMeta(type):
 
     @staticmethod
     def log_method(method_name: str, method: Callable) -> Callable:
-        def wrapper(*args, **kwargs):
-            # Log the method call
+        def wrapper(self, *args, **kwargs):
             arg_str = ", ".join(map(str, args)) + ", ".join(
                 f"{k}={v}" for k, v in kwargs.items()
             )
             error_reporter.log(
-                f"Calling {method_name} with arguments: {arg_str}"
+                f"{self.__class__.__name__}.{method_name}({arg_str})"
             )
-
             # Call the original method
-            return method(*args, **kwargs)
+            return method(self, *args, **kwargs)
 
         return wrapper
 
@@ -55,4 +51,5 @@ obj = MyClass()
 obj.method_a(5)
 obj.method_b("test")
 
-pprint(error_reporter.logs)
+for entry in error_reporter.logs:
+    print(entry)
