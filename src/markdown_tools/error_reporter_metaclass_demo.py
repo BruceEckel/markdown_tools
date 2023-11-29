@@ -1,4 +1,5 @@
 from typing import Any, Callable
+from functools import wraps
 
 
 class ErrorReporter:
@@ -12,7 +13,20 @@ class ErrorReporter:
 error_reporter = ErrorReporter()  # File scope
 
 
-class LoggingMeta(type):
+def err_track(func: Callable) -> Callable:
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        arg_str = ", ".join(map(str, args)) + ", ".join(
+            f"{k}={v}" for k, v in kwargs.items()
+        )
+        error_reporter.log(f"{func.__name__}({arg_str})")
+        # Call the original function
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+class ErrorTracker(type):
     def __new__(
         cls, name: str, bases: tuple[type, ...], dct: dict[str, Any]
     ):
@@ -37,7 +51,7 @@ class LoggingMeta(type):
         return wrapper
 
 
-class MyClass(metaclass=LoggingMeta):
+class MyClass(metaclass=ErrorTracker):
     def method_a(self, n: int):
         # Method implementation...
         pass
@@ -47,6 +61,13 @@ class MyClass(metaclass=LoggingMeta):
         pass
 
 
+@err_track
+def some_function(a, b):
+    # Function implementation
+    pass
+
+
+some_function(1, 2)
 obj = MyClass()
 obj.method_a(5)
 obj.method_b("test")
