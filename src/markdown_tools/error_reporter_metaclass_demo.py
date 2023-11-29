@@ -1,18 +1,34 @@
 from typing import Any, Callable
 from functools import wraps
+import sys
+from rich import print
 
 
 class ErrorReporter:
     def __init__(self):
         self.logs = []
 
+    def assert_true(self, condition: bool, msg: str) -> None:
+        if not condition:
+            self.error(msg)
+
+    def error(self, msg: str) -> None:
+        print(
+            f"[bold red underline][ERROR][/bold red underline]\n{self}\n{msg}\n"
+        )
+        sys.exit(1)
+
     def log(self, message: str):
         self.logs.append(message)
 
+    def __str__(self) -> str:
+        return "\n".join(self.logs)
 
-error_reporter = ErrorReporter()  # File scope
+
+error_reporter = ErrorReporter()
 
 
+# Decorator for standalone functions
 def err_track(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -26,6 +42,7 @@ def err_track(func: Callable) -> Callable:
     return wrapper
 
 
+# Metaclass to track method calls in classes
 class ErrorTracker(type):
     def __new__(
         cls, name: str, bases: tuple[type, ...], dct: dict[str, Any]
@@ -61,16 +78,16 @@ class MyClass(metaclass=ErrorTracker):
         pass
 
 
-@err_track
-def some_function(a, b):
-    # Function implementation
-    pass
+if __name__ == "__main__":
 
+    @err_track
+    def some_function(a, b):
+        # Function implementation
+        pass
 
-some_function(1, 2)
-obj = MyClass()
-obj.method_a(5)
-obj.method_b("test")
+    some_function(1, 2)
+    obj = MyClass()
+    obj.method_a(5)
+    obj.method_b("test")
 
-for entry in error_reporter.logs:
-    print(entry)
+    error_reporter.assert_true(False, "Test error message")
