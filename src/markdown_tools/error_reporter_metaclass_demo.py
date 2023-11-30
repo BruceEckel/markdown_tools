@@ -2,11 +2,12 @@ from typing import Any, Callable
 from functools import wraps
 import sys
 from rich import print
+from dataclasses import dataclass
 
 
 class ErrorReporter:
     def __init__(self):
-        self.logs = []
+        self.trace = []
 
     def assert_true(self, condition: bool, msg: str) -> None:
         if not condition:
@@ -14,28 +15,29 @@ class ErrorReporter:
 
     def error(self, msg: str) -> None:
         print(
-            f"[bold red underline][ERROR][/bold red underline]\n{self}\n{msg}\n"
+            f"[bold red underline][ERROR][/bold red underline]\n{self}\n"
+            f"[bold red]{msg}[/bold red]\n"
         )
         sys.exit(1)
 
-    def log(self, message: str):
-        self.logs.append(message)
+    def track(self, message: str):
+        self.trace.append(message)
 
     def __str__(self) -> str:
-        return "\n".join(self.logs)
+        return "\n".join(self.trace)
 
 
-error_reporter = ErrorReporter()
+check = ErrorReporter()
 
 
 # Decorator for standalone functions
-def err_track(func: Callable) -> Callable:
+def call_track(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(*args, **kwargs):
         arg_str = ", ".join(map(str, args)) + ", ".join(
             f"{k}={v}" for k, v in kwargs.items()
         )
-        error_reporter.log(f"{func.__name__}({arg_str})")
+        check.track(f"{func.__name__}({arg_str})")
         # Call the original function
         return func(*args, **kwargs)
 
@@ -43,23 +45,25 @@ def err_track(func: Callable) -> Callable:
 
 
 # Metaclass to track method calls in classes
-class ErrorTracker(type):
+class CallTracker(type):
     def __new__(
         cls, name: str, bases: tuple[type, ...], dct: dict[str, Any]
     ):
         # Wrap each method with a logging wrapper
         for attr_name, attr_value in dct.items():
             if callable(attr_value):
-                dct[attr_name] = cls.log_method(attr_name, attr_value)
+                dct[attr_name] = cls.track_method(
+                    attr_name, attr_value
+                )
         return super().__new__(cls, name, bases, dct)
 
     @staticmethod
-    def log_method(method_name: str, method: Callable) -> Callable:
+    def track_method(method_name: str, method: Callable) -> Callable:
         def wrapper(self, *args, **kwargs):
             arg_str = ", ".join(map(str, args)) + ", ".join(
                 f"{k}={v}" for k, v in kwargs.items()
             )
-            error_reporter.log(
+            check.track(
                 f"{self.__class__.__name__}.{method_name}({arg_str})"
             )
             # Call the original method
@@ -68,26 +72,36 @@ class ErrorTracker(type):
         return wrapper
 
 
-class MyClass(metaclass=ErrorTracker):
-    def method_a(self, n: int):
-        # Method implementation...
-        pass
-
-    def method_b(self, s: str):
-        # Method implementation...
-        pass
-
-
 if __name__ == "__main__":
 
-    @err_track
+    @call_track
     def some_function(a, b):
         # Function implementation
         pass
+
+    class MyClass(metaclass=CallTracker):
+        def method_a(self, n: int):
+            # Method implementation...
+            pass
+
+        def method_b(self, s: str):
+            # Method implementation...
+            pass
+
+    @dataclass
+    class Foo(metaclass=CallTracker):
+        bob: str
+        n: int
+
+        def f(self, nn: int) -> None:
+            self.n = nn
 
     some_function(1, 2)
     obj = MyClass()
     obj.method_a(5)
     obj.method_b("test")
+    foo = Foo("hi", 20)
+    foo.f(11)
+    print(foo)
 
-    error_reporter.assert_true(False, "Test error message")
+    check.assert_true(False, "Test error message")
