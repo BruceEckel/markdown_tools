@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias
 from markdown_tools import LANGUAGES, LanguageInfo, separator
-import typer
 from .error_reporter import check, CallTracker
 
 
@@ -11,8 +10,7 @@ from .error_reporter import check, CallTracker
 class MarkdownScanner(metaclass=CallTracker):
     """
     Delivers the markdown file a line at a time.
-    Keeps track of the current line.
-    Knows the Path of the file, for use in error messages.
+    Provides a 1-line lookahead.
     """
 
     file_path: Path
@@ -272,7 +270,7 @@ def remove_subpath(full_path: str, rest_of_path: str) -> str:
         relative_path = _rest_of_path.relative_to(_full_path)
         return relative_path.as_posix()
     except Exception as e:
-        raise typer.Exit(e)  # type: ignore
+        check.error(str(e))
 
 
 @dataclass
@@ -361,7 +359,7 @@ class CodePath(metaclass=CallTracker):
                 )
             )
         except Exception as e:
-            raise typer.Exit(e)  # type: ignore
+            check.error(str(e))  # type: ignore
 
     def __repr__(self) -> str:
         return repr(self.comment)
