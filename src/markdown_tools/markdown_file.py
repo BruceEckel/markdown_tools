@@ -1,14 +1,14 @@
 #: markdown_file.py
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List, Tuple, Union, TypeAlias, ClassVar
+from typing import Iterator, List, Tuple, Union, TypeAlias
 from markdown_tools import LANGUAGES, LanguageInfo, separator
 import typer
-from .error_reporter import ErrorReporter
+from .error_reporter import check, CallTracker
 
 
 @dataclass
-class MarkdownScanner:
+class MarkdownScanner(metaclass=CallTracker):
     """
     Delivers the markdown file a line at a time.
     Keeps track of the current line.
@@ -19,23 +19,21 @@ class MarkdownScanner:
     original_markdown: str = ""
     lines: List[str] = field(default_factory=list)
     current_line_number: int = 0
-    start_of_block: int = 0  # For error messages ## Remove
-    err: ErrorReporter = field(default_factory=ErrorReporter)
-
-    def _assert_true(self, condition: bool, msg: str) -> None:
-        if not condition:
-            raise typer.Exit(f'[ERROR] "{self.file_path}" ' + msg)  # type: ignore
 
     def __post_init__(self):
-        self._assert_true(self.file_path.exists(), "does not exist")
-        self._assert_true(
-            not self.file_path.is_dir(), "is a directory"
+        check.is_true(
+            self.file_path.exists(),
+            f"{self.file_path} does not exist",
         )
-        if self.file_path.suffix in LANGUAGES:
-            return  # For SourceCode.from_source_file() [Hack]
-        self._assert_true(
-            self.file_path.suffix == ".md", "does not end with '.md'"
+        check.is_true(
+            not self.file_path.is_dir(),
+            f"{self.file_path} is a directory",
         )
+        check.is_true(
+            self.file_path.suffix == ".md",
+            f"{self.file_path} does not end with '.md'",
+        )
+        check.input_file = self.file_path
         self.original_markdown = self.file_path.read_text(
             encoding="utf-8"
         )
@@ -49,6 +47,8 @@ class MarkdownScanner:
             raise StopIteration
         line = self.lines[self.current_line_number]
         self.current_line_number += 1
+        check.current_line = line
+        check.current_line_number = self.current_line_number
         return line
 
     def __bool__(self) -> bool:
@@ -63,20 +63,14 @@ class MarkdownScanner:
             return None
         return self.lines[self.current_line_number]
 
-    def assert_true(self, condition: bool, msg: str):
-        start_err = f" at line {self.start_of_block}:\n"
-        self._assert_true(condition, start_err + msg)
-
 
 @dataclass
-class Markdown:
+class Markdown(metaclass=CallTracker):
     """
     Contains a section of normal markdown text
     """
 
-    scanner: MarkdownScanner
     text: str
-    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __repr__(self) -> str:
         return f"{self.text}"
@@ -96,11 +90,11 @@ class Markdown:
                 break
             text_lines.append(next(scanner))
 
-        return Markdown(scanner, "".join(text_lines))
+        return Markdown("".join(text_lines))
 
 
 @dataclass
-class SourceCode:
+class SourceCode(metaclass=CallTracker):
     """
     Contains a single source-code listing:
     A.  All listings begin and end with ``` markers.
@@ -114,12 +108,10 @@ class SourceCode:
     """
 
     original_code_block: str
-    scanner: MarkdownScanner
     language_name: str = ""
     source_file_name: str = ""
     code: str = ""
     ignore: bool = False
-    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __post_init__(self) -> None:
         lines = self.original_code_block.splitlines(True)
@@ -131,14 +123,14 @@ class SourceCode:
         self.language_name = tagline[3:].strip()
         self.code = "".join(lines[1:-1])
 
-        self.scanner.assert_true(
+        check.is_true(
             bool(self.language_name),
             f"Language cannot be empty in {self.original_code_block}",
         )
 
         if self.ignore:
             return
-        self.scanner.assert_true(
+        check.is_true(
             self.language_name in LANGUAGES,
             f"\n{self.language_name} is not in LANGUAGES in:\n{self.original_code_block}",
         )
@@ -146,7 +138,7 @@ class SourceCode:
         language: LanguageInfo = LANGUAGES[self.language_name]
         if not language.source_file_name_required:
             return  # 'text' block and similar
-        self.scanner.assert_true(
+        check.is_true(
             filename_line.startswith(language.comment_symbol)
             and filename_line.endswith(language.file_extension),
             f"First line must contain source file name in:\n{self.original_code_block}",
@@ -154,7 +146,7 @@ class SourceCode:
         self.source_file_name = filename_line[
             len(language.comment_symbol) :
         ].strip()
-        self.scanner.assert_true(
+        check.is_true(
             bool(self.source_file_name),
             f"Source file name cannot be empty in:\n{self.original_code_block}",
         )
@@ -169,32 +161,30 @@ class SourceCode:
             code_lines.append(next(scanner))  # Include closing ```
             if line.startswith("```"):
                 # Closing tag must not be followed by a language:
-                scanner.assert_true(
+                check.is_true(
                     len(line.strip()) == len("```"),
                     "Unclosed code block",
                 )
                 break
 
-        return SourceCode("".join(code_lines), scanner)
+        return SourceCode("".join(code_lines))
 
     @staticmethod
     def from_source_file(
         source_file: Path,
     ) -> "SourceCode":
-        assert (
-            source_file.exists() and source_file.is_file()
-        ), f"{source_file} does not exist"
-        # print(f"{source_file.suffix = }")
-        assert (
-            source_file.suffix in LANGUAGES
-        ), f"{source_file} must be a source code file"
+        check.is_true(
+            source_file.exists() and source_file.is_file(),
+            f"{source_file} does not exist",
+        )
+        check.is_true(
+            source_file.suffix in LANGUAGES,
+            f"{source_file} must be a source code file",
+        )
         return SourceCode(
             f"```{LANGUAGES[source_file.suffix].language}\n"
             + source_file.read_text(encoding="utf-8")
-            + "```",
-            MarkdownScanner(
-                source_file
-            ),  # Hack: creates a dummy file
+            + "```"
         )
 
     def __eq__(self, other):
@@ -223,7 +213,7 @@ class SourceCode:
 
 
 @dataclass
-class Comment:
+class Comment(metaclass=CallTracker):
     """
     Our special Markdown comments that use the following format:
     %%
@@ -237,9 +227,7 @@ class Comment:
     *exactly* `%%`
     """
 
-    scanner: MarkdownScanner
     comment: List[str]
-    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __repr__(self) -> str:
         return "".join(self.comment)
@@ -265,15 +253,15 @@ class Comment:
             comment.append(next(scanner))
             if comment[-1].rstrip() == "%%":  # Closing comment marker
                 break
-            scanner.assert_true(
+            check.is_true(
                 bool(scanner.current_line()),
                 "Unclosed markdown comment",
             )
         batch = "".join(comment)
         if "url:" in batch or "path:" in batch:
-            return CodePath(Comment(scanner, comment))
+            return CodePath(Comment(comment))
 
-        return Comment(scanner, comment)
+        return Comment(comment)
 
 
 def remove_subpath(full_path: str, rest_of_path: str) -> str:
@@ -288,7 +276,7 @@ def remove_subpath(full_path: str, rest_of_path: str) -> str:
 
 
 @dataclass
-class CodePath:
+class CodePath(metaclass=CallTracker):
     """
     A special comment containing a path to a directory of code files.
     Each of these resets the directory for subsequent code listings.
@@ -304,13 +292,12 @@ class CodePath:
     comment: Comment
     path: str | None = None
     url: str | None = None
-    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __post_init__(self):
         def exists(id: str) -> bool:
             return self.comment[1].startswith(id)
 
-        self.comment.scanner.assert_true(
+        check.is_true(
             exists("path:") or exists("url:"),
             f"Missing 'path:' or 'url:' in:\n{self}",
         )
@@ -324,12 +311,16 @@ class CodePath:
         """
         Check that this CodePath's `path` + source_code.source_file_name exists.
         """
-        assert self.path, f"Cannot validate empty path in:\n{self}"
+        check.is_true(
+            self.path is not None,
+            f"Cannot validate empty path in:\n{self}",
+        )
 
-        start_path = Path(self.path)
-        assert (
-            start_path.exists()
-        ), f"Starting path {start_path.as_posix()} does not exist"
+        start_path = Path(self.path)  # type: ignore
+        check.is_true(
+            start_path.exists(),
+            f"Starting path {start_path.as_posix()} does not exist",
+        )
         # Create exact path by combining the two:
         full_path = start_path / source_code.source_file_name
         if full_path.exists():
@@ -352,7 +343,9 @@ class CodePath:
         start = Path(
             LANGUAGES[source_code.language_name].start_search
         )
-        assert start.exists(), f"Doesn't exist: {start.as_posix()}"
+        check.is_true(
+            start.exists(), f"Doesn't exist: {start.as_posix()}"
+        )
         try:
             full_path = (
                 next(  # First one; exception if none are found
@@ -364,7 +357,6 @@ class CodePath:
             )
             return CodePath(
                 Comment(
-                    source_code.scanner,
                     ["%%\n", f"path: {code_path}\n", "%%\n"],
                 )
             )
@@ -388,16 +380,19 @@ MarkdownPart: TypeAlias = Markdown | SourceCode | CodePath | Comment
 
 
 @dataclass
-class MarkdownFile:
+class MarkdownFile(metaclass=CallTracker):
     file_path: Path
     scanner: MarkdownScanner
     contents: List[MarkdownPart]
     name_already_displayed: bool = False
-    err: ErrorReporter = field(default_factory=ErrorReporter)
 
     def __init__(self, file_path: Path):
-        assert file_path.exists()
-        assert file_path.is_file()
+        check.is_true(
+            file_path.exists(), f"{file_path} doesn't exist"
+        )
+        check.is_true(
+            file_path.is_file(), f"{file_path} is not a file"
+        )
         self.file_path = file_path
         self.scanner = MarkdownScanner(self.file_path)
         self.contents = list(MarkdownFile.parse(self.scanner))
@@ -428,6 +423,7 @@ class MarkdownFile:
         )
 
     def contains(self, item: MarkdownPart) -> bool:
+        # TODO: can we use any() here?f
         result = [
             part for part in self.contents if isinstance(part, item)  # type: ignore
         ]
@@ -496,7 +492,7 @@ class MarkdownFile:
                 if code_path is not None:
                     yield (code_path, part)
                 else:
-                    raise typer.Exit("Error: code_path is None")  # type: ignore
+                    check.error("Error: code_path is None")
 
     def code_paths(self) -> List[CodePath]:
         return [part for part in self if isinstance(part, CodePath)]
