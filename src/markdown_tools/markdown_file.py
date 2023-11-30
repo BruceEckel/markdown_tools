@@ -359,7 +359,7 @@ class CodePath(metaclass=CallTracker):
                 )
             )
         except Exception as e:
-            check.error(str(e))  # type: ignore
+            check.error(str(e))
 
     def __repr__(self) -> str:
         return repr(self.comment)
