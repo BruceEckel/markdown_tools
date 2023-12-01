@@ -10,6 +10,8 @@ from rich.console import Console, ConsoleOptions, RenderResult
 from rich.rule import Rule
 import rich.markdown
 
+# from rich.text import Text
+
 
 @dataclass
 class MarkdownScanner(metaclass=CallTracker):
@@ -84,8 +86,9 @@ class Markdown(metaclass=CallTracker):
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
-        yield Rule("MarkdownText", align="left")
-        yield Panel(rich.markdown.Markdown(self.text))
+        yield Panel(
+            rich.markdown.Markdown(self.text), title="MarkdownText"
+        )
 
     @staticmethod
     def parse(
@@ -256,8 +259,9 @@ class Comment(metaclass=CallTracker):
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
-        yield Rule("Comment", align="left")
-        yield rich.markdown.Markdown(repr(self))
+        yield Panel(
+            rich.markdown.Markdown(repr(self)), title="Comment"
+        )
 
     # Indexing including slicing:
     def __getitem__(self, index):
@@ -529,5 +533,5 @@ class MarkdownFile(metaclass=CallTracker):
         if not self.pathed_code_listings():
             return False  # No CodePaths needed
         if self.code_paths():
-            return False  # Already exists (TODO: might be url: and not :path)
+            return False  # Already exists (NOTE: might be url: and not :path)
         return True
