@@ -4,6 +4,9 @@ from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias
 from markdown_tools import LANGUAGES, LanguageInfo, separator, console
 from .error_reporter import check, CallTracker
+from rich.console import Console, ConsoleOptions, RenderResult
+from rich.rule import Rule
+import rich.markdown
 
 
 @dataclass
@@ -75,6 +78,12 @@ class Markdown(metaclass=CallTracker):
 
     def __str__(self) -> str:
         return separator("MarkdownText") + repr(self)
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        yield Rule("MarkdownText")
+        yield rich.markdown.Markdown(self.text)
 
     @staticmethod
     def parse(
@@ -208,6 +217,14 @@ class SourceCode(metaclass=CallTracker):
             + f"{self.source_file_name = }\n"
             + f"{self.language_name = } {self.ignore = }"
         )
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        yield Rule("SourceCode")
+        ignore_marker = " !" if self.ignore else ""
+        yield f"```{self.language_name}{ignore_marker}\n"
+        yield rich.markdown.Markdown(self.original_code_block)
 
 
 @dataclass
