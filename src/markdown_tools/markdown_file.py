@@ -1,9 +1,11 @@
 #: markdown_file.py
+# TODO: can we get rid of separator, __str__ and __repr__?
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias
 from markdown_tools import LANGUAGES, LanguageInfo, separator, console
 from .error_reporter import check, CallTracker
+from rich.panel import Panel
 from rich.console import Console, ConsoleOptions, RenderResult
 from rich.rule import Rule
 import rich.markdown
@@ -82,8 +84,8 @@ class Markdown(metaclass=CallTracker):
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
-        yield Rule("MarkdownText")
-        yield rich.markdown.Markdown(self.text)
+        yield Rule("MarkdownText", align="left")
+        yield Panel(rich.markdown.Markdown(self.text))
 
     @staticmethod
     def parse(
@@ -221,10 +223,11 @@ class SourceCode(metaclass=CallTracker):
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
-        yield Rule("SourceCode")
         ignore_marker = " !" if self.ignore else ""
-        yield f"```{self.language_name}{ignore_marker}\n"
-        yield rich.markdown.Markdown(self.original_code_block)
+        yield Panel(
+            rich.markdown.Markdown(self.original_code_block),
+            title=f"SourceCode: [```{self.language_name}{ignore_marker}]",
+        )
 
 
 @dataclass
@@ -249,6 +252,12 @@ class Comment(metaclass=CallTracker):
 
     def __str__(self) -> str:
         return "\n" + separator("Comment") + repr(self)
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        yield Rule("Comment", align="left")
+        yield rich.markdown.Markdown(repr(self))
 
     # Indexing including slicing:
     def __getitem__(self, index):
@@ -390,6 +399,14 @@ class CodePath(metaclass=CallTracker):
             + repr(self)
         )
 
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        yield Rule("CodePath", align="left")
+        yield f"path: [{self.path}]\n"
+        yield f"url: [{self.url}]\n"
+        yield self.comment
+
 
 MarkdownPart: TypeAlias = Markdown | SourceCode | CodePath | Comment
 
@@ -429,8 +446,7 @@ class MarkdownFile(metaclass=CallTracker):
         if self.name_already_displayed:
             return
         self.name_already_displayed = True
-        # print(separator(self.file_path.name, "-"), end=end)
-        console.rule(self.file_path.name, align="left")
+        console.rule(self.file_path.name, style="bold red")
 
     def write_new_file(self, file_path: Path) -> None:
         file_path.write_text(
@@ -438,12 +454,8 @@ class MarkdownFile(metaclass=CallTracker):
             encoding="utf-8",
         )
 
-    def contains(self, item: MarkdownPart) -> bool:
-        # TODO: can we use any() here?f
-        result = [
-            part for part in self.contents if isinstance(part, item)  # type: ignore
-        ]
-        return bool(result)
+    def contains(self, item: type) -> bool:
+        return any(isinstance(part, item) for part in self.contents)
 
     def __getitem__(self, index: int):
         if isinstance(index, slice):

@@ -25,10 +25,8 @@ def compare_listings_to_source_files(md: Path):
             console.print("\n[MATCH]")
         else:
             console.print("\n[NO MATCH]")
-            console.print("Listing:\n", source_code)
-            console.print("*" * 50)
-            console.print("Source file:\n", source_file)
-            console.print("^" * 50)
+            console.print("In Markdown:", source_code)
+            console.print("Source code file:", source_file)
 
 
 def update_listings(md: Path):

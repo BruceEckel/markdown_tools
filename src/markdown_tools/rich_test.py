@@ -3,6 +3,8 @@ from rich.console import Console, ConsoleOptions, RenderResult
 from rich.table import Table
 from rich.markdown import Markdown
 from rich.rule import Rule
+from rich.panel import Panel
+from rich.text import Text
 
 MARKDOWN = """
 # This is an h1
@@ -48,3 +50,7 @@ class Student:
 
 s = Student(99, "Bob Dobbs", 22)
 console.print(s)
+
+
+panel = Panel(Text("Hello"))
+console.print(panel)
