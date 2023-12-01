@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Union, List
-import typer
+from .error_reporter import check
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,7 @@ class NumberedFile:
             self.priority = "A" if match.group(2) else "B"
             self.text_name = match.group(3).strip()
         else:
-            raise typer.Exit(f"Invalid format: {self.original_name}")
+            raise check.error(f"Invalid format: {self.original_name}")
 
     def __str__(self) -> str:
         br = "\n    "

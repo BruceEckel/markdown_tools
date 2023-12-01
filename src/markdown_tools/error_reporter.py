@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, List
+from typing import Any, Callable, List, NoReturn
 from functools import wraps
 import sys
 from rich import print
@@ -13,22 +13,37 @@ class ErrorReporter:
         self.current_line_number: int = 0
         self.current_line: str = ""
 
-    def is_true(self, condition: bool, msg: str) -> None:
-        if not condition:
-            self.error(msg)
-
-    def error(self, msg: str) -> None:
-        print(
-            f"[bold red underline][ERROR][/bold red underline]\n{self}\n"
-            f"[bold red]{msg}[/bold red]\n"
-        )
-        sys.exit(1)
-
     def track(self, message: str) -> None:
         self.trace.append(message)
 
     def __str__(self) -> str:
-        return "\n".join(self.trace)
+        parts = [f"Input file: {self.input_file}"]
+
+        if self.current_line_number != 0:
+            parts.append(f"At line number {self.current_line_number}")
+
+        if self.current_line:
+            parts.append(f"Line: {self.current_line}")
+
+        parts.extend(self.trace)
+        return "\n".join(parts)
+
+    def __rich__(self) -> str:
+        return str(self)
+
+    def format(self, msg: str) -> str:
+        return (
+            f"[bold red underline][ERROR][/bold red underline]\n{self}\n"
+            f"[bold red]{msg}[/bold red]\n"
+        )
+
+    def error(self, msg: str) -> NoReturn:
+        print(self.format(msg))
+        sys.exit(1)
+
+    def is_true(self, condition: bool, msg: str) -> None:
+        if not condition:
+            self.error(msg)
 
 
 check = ErrorReporter()
@@ -108,4 +123,5 @@ if __name__ == "__main__":
     foo.f(11)
     print(foo)
 
-    check.is_true(False, "Test error message")
+    # check.is_true(False, "Test error message")
+    check.error("Testing error()")
