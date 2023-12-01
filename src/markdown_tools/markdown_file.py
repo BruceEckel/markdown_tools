@@ -8,9 +8,8 @@ from .error_reporter import check, CallTracker
 from rich.panel import Panel
 from rich.console import Console, ConsoleOptions, RenderResult
 from rich.rule import Rule
+from rich.text import Text
 import rich.markdown
-
-# from rich.text import Text
 
 
 @dataclass
@@ -260,7 +259,8 @@ class Comment(metaclass=CallTracker):
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         yield Panel(
-            rich.markdown.Markdown(repr(self)), title="Comment"
+            Text("".join(self.comment)),
+            title="Comment",
         )
 
     # Indexing including slicing:
@@ -407,8 +407,8 @@ class CodePath(metaclass=CallTracker):
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         yield Rule("CodePath", align="left")
-        yield f"path: [{self.path}]\n"
-        yield f"url: [{self.url}]\n"
+        yield f"path: [{self.path}]"
+        yield f"url: [{self.url}]"
         yield self.comment
 
 

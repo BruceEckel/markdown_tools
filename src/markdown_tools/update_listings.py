@@ -9,6 +9,31 @@ from markdown_tools import (
     console,
 )
 from rich.panel import Panel
+import difflib
+
+
+def compare_strings(str1: str, str2: str):
+    n1, n2 = 1, 1
+    result = []
+
+    for line in list(
+        difflib.Differ().compare(str1.splitlines(), str2.splitlines())
+    ):
+        if line.startswith("  "):
+            # Line present in both strings
+            result.append(f"  {n1:4} {n2:4} {line}")
+            n1 += 1
+            n2 += 1
+        elif line.startswith("- "):
+            # Line present in str1 but not in str2
+            result.append(f"- {n1:4}      {line}")
+            n1 += 1
+        elif line.startswith("+ "):
+            # Line present in str2 but not in str1
+            result.append(f"+      {n2:4} {line}")
+            n2 += 1
+
+    return result
 
 
 def compare_listings_to_source_files(md: Path):
@@ -21,22 +46,23 @@ def compare_listings_to_source_files(md: Path):
         assert (
             full_path.exists()
         ), f"ERROR: {full_path.as_posix()} does not exist"
-        console.print(f"{full_path.as_posix()} ", end="")
+        console.rule(f"{full_path.as_posix()}", align="left")
         source_file = SourceCode.from_source_file(full_path)
         if source_file == source_code:
-            console.print("\n[MATCH]")
+            console.print("[green bold][MATCH]")
         else:
-            console.print("\n[NO MATCH]")
+            console.print("[red bold][DOES NOT MATCH]")
             console.print("In Markdown:", source_code)
             console.print("Source code file:", source_file)
-            lines1 = source_code.original_code_block.splitlines()
-            lines2 = source_file.original_code_block.splitlines()
-            # differ = difflib.Differ()
-            diff = list(context_diff(lines1, lines2))
-            # diff = [
-            #     line for line in diff if line.startswith(("-", "+"))
-            # ]
-            console.print(Panel("\n".join(diff), title="Diff"))
+            diff = compare_strings(
+                source_code.code,
+                source_file.code,
+            )
+            console.print(
+                Panel(
+                    "\n".join(diff), title="Diff: Markdown <-> Source"
+                )
+            )
 
 
 def update_listings(md: Path):
