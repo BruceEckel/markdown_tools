@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias
-from markdown_tools import LANGUAGES, LanguageInfo, separator
+from markdown_tools import LANGUAGES, LanguageInfo, separator, console
 from .error_reporter import check, CallTracker
 
 
@@ -412,7 +412,8 @@ class MarkdownFile(metaclass=CallTracker):
         if self.name_already_displayed:
             return
         self.name_already_displayed = True
-        print(separator(self.file_path.name, "-"), end=end)
+        # print(separator(self.file_path.name, "-"), end=end)
+        console.rule(self.file_path.name, align="left")
 
     def write_new_file(self, file_path: Path) -> None:
         file_path.write_text(

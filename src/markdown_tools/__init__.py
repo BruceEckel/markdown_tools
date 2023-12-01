@@ -1,4 +1,5 @@
 # markdown_tools/__init__.py
+from .console import console  # noqa: F401
 from .languages import LanguageInfo, LANGUAGES  # noqa: F401
 from .util import separator  # noqa: F401
 from .markdown_file import (  # noqa: F401

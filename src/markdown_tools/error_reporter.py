@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Callable, List, NoReturn
 from functools import wraps
 import sys
-from rich import print
+from markdown_tools import console
 from dataclasses import dataclass
 
 
@@ -17,7 +17,10 @@ class ErrorReporter:
         self.trace.append(message)
 
     def __str__(self) -> str:
-        parts = [f"Input file: {self.input_file}"]
+        parts = []
+
+        if self.input_file:
+            parts.append(f"Input file: {self.input_file}")
 
         if self.current_line_number != 0:
             parts.append(f"At line number {self.current_line_number}")
@@ -38,7 +41,7 @@ class ErrorReporter:
         )
 
     def error(self, msg: str) -> NoReturn:
-        print(self.format(msg))
+        console.print(self.format(msg))
         sys.exit(1)
 
     def is_true(self, condition: bool, msg: str) -> None:
@@ -121,7 +124,7 @@ if __name__ == "__main__":
     obj.method_b("test")
     foo = Foo("hi", 20)
     foo.f(11)
-    print(foo)
+    console.print(foo)
 
-    # check.is_true(False, "Test error message")
-    check.error("Testing error()")
+    # calls error():
+    check.is_true(False, "Test error message")

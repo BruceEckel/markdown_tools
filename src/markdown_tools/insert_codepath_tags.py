@@ -1,6 +1,6 @@
 #: insert_codepath_tags.py
 from pathlib import Path
-from markdown_tools import MarkdownFile, CodePath, SourceCode
+from markdown_tools import MarkdownFile, CodePath, SourceCode, console
 
 
 def validate_codepath_tags(md: Path):
@@ -16,17 +16,17 @@ def validate_codepath_tags(md: Path):
         ):
             md_file.display_name_once()
             if code_path is None:
-                print(
+                console.print(
                     "[FAILED] validate_codepath_tags(): "
                     f"{part.source_file_name} appeared before CodePath"
                 )
                 continue
             if code_path.validate(part):
-                print(
+                console.print(
                     f"Validated {code_path.path} -> {part.source_file_name}"
                 )
             else:
-                print(
+                console.print(
                     f"Invalid: {part.source_file_name} under {code_path.path}"
                 )
 
@@ -36,7 +36,7 @@ def insert_codepath_tags(md: Path):
     md_file.display_name_once()
     tmp_file = md_file.file_path.with_suffix(".tmp.md")
     if tmp_file.exists():
-        print(f"Deleting: {tmp_file}")
+        console.print(f"Deleting: {tmp_file}")
         tmp_file.unlink()
     code_path: CodePath | None = None
     for part in md_file:
@@ -50,7 +50,7 @@ def insert_codepath_tags(md: Path):
         ):
             source_code: SourceCode = part
             if code_path and code_path.validate(source_code):
-                print(
+                console.print(
                     f"Validated {code_path.path} -> {source_code.source_file_name}"
                 )
             else:  # code_path is None or didn't validate.

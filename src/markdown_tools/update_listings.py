@@ -1,6 +1,12 @@
 # update_listings.py
 from pathlib import Path
-from markdown_tools import MarkdownFile, SourceCode, Comment, CodePath
+from markdown_tools import (
+    MarkdownFile,
+    SourceCode,
+    Comment,
+    CodePath,
+    console,
+)
 
 
 def compare_listings_to_source_files(md: Path):
@@ -13,16 +19,16 @@ def compare_listings_to_source_files(md: Path):
         assert (
             full_path.exists()
         ), f"ERROR: {full_path.as_posix()} does not exist"
-        print(f"{full_path.as_posix()} ", end="")
+        console.print(f"{full_path.as_posix()} ", end="")
         source_file = SourceCode.from_source_file(full_path)
         if source_file == source_code:
-            print("\n[MATCH]")
+            console.print("\n[MATCH]")
         else:
-            print("\n[NO MATCH]")
-            print("Listing:\n", source_code)
-            print("*" * 50)
-            print("Source file:\n", source_file)
-            print("^" * 50)
+            console.print("\n[NO MATCH]")
+            console.print("Listing:\n", source_code)
+            console.print("*" * 50)
+            console.print("Source file:\n", source_file)
+            console.print("^" * 50)
 
 
 def update_listings(md: Path):
@@ -37,7 +43,7 @@ def update_listings(md: Path):
         ), f"ERROR: {full_path.as_posix()} does not exist"
         source_file = full_path.read_text(encoding="utf-8")
         if source_file != source_code.code:
-            print(f"Updating from {full_path.as_posix()}")
+            console.print(f"Updating from {full_path.as_posix()}")
             # 1. Create a new SourceCode object from source_file
             # 2. md_file[md_file.index_of(source_code)] = new_source_code
 
@@ -54,13 +60,13 @@ def check_code_listings(md: Path):
         assert isinstance(listing, SourceCode)
         if r := check_code_block(listing):
             md_file.display_name_once()
-            print(r)
+            console.print(r)
 
 
 def display_markdown_comments(md: Path):
-    print(f"{md}:")
+    console.print(f"{md}:")
     for comment in MarkdownFile(md).comments():
         assert isinstance(comment, Comment) or isinstance(
             comment, CodePath
         )
-        print(comment)
+        console.print(comment)

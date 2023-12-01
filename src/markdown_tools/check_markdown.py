@@ -2,13 +2,13 @@
 from io import StringIO
 from pathlib import Path
 import typer
-from markdown_tools import MarkdownFile
+from markdown_tools import MarkdownFile, console
 
 
 def check_markdown(md: Path):
     markdown = MarkdownFile(md)
     for code_path in markdown.code_paths():
-        print(f"\npath: {code_path.path}")
+        console.print(f"\npath: {code_path.path}")
     # Regenerate markdown file into memory:
     new_markdown = StringIO()
     new_markdown.write(

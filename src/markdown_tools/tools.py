@@ -12,6 +12,7 @@ from markdown_tools import (
     insert_codepath_tags,
     validate_codepath_tags,
     NumberedFile,
+    console,
 )
 from pathlib import Path
 import platform
@@ -43,13 +44,13 @@ def a_check(
     Basic validation of Markdown files.
     """
     for tmp_file in Path(".").glob("*.tmp.md"):
-        print(f"Removing {tmp_file.name}")
+        console.print(f"Removing {tmp_file.name}")
         tmp_file.unlink()
 
     def _check(md: Path):
-        print(f"{md.name} ", end="")
+        console.print(f"{md.name} ", end="")
         assert md.exists(), f"{md} does not exist"
-        print(f"[{check_markdown(md)}]")
+        console.print(f"[{check_markdown(md)}]")
 
     if filename:
         _check(Path(filename))
@@ -133,7 +134,7 @@ def e_renumber(
         if go == "go":
             go_flag = True
         else:
-            print("use 'go' argument to execute changes")
+            console.print("use 'go' argument to execute changes")
             raise typer.Exit()
     chapter_changes: List[
         NumberedFile
@@ -142,11 +143,11 @@ def e_renumber(
         NumberedFile
     ] = NumberedFile.appendices().changes
     if not chapter_changes and not appendix_changes:
-        print("No Changes")
+        console.print("No Changes")
 
     def make_changes(changes: List[NumberedFile]):
         for change in changes:
-            print(
+            console.print(
                 f"'{change.original_name}'  -->  '{change.new_name}'"
             )
             if go_flag:
