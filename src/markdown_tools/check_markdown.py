@@ -1,8 +1,8 @@
 #: check_markdown.py
 from io import StringIO
 from pathlib import Path
-import typer
 from markdown_tools import MarkdownFile, console
+from .error_reporter import check
 
 
 def check_markdown(md: Path):
@@ -17,13 +17,13 @@ def check_markdown(md: Path):
     new_markdown.seek(0)
     # Compare regenerated file to file on disk:
     if new_markdown.read() == md.read_text(encoding="utf-8"):
-        return "OK"
+        return "[green bold][OK][/green bold]"
     else:
         comparison_file_path = markdown.file_path.with_suffix(
             ".tmp.md"
         )
         markdown.write_new_file(comparison_file_path)
-        raise typer.Exit(
-            f"\nERROR: Regenerated file '{comparison_file_path.name}'\n"  # type: ignore
+        check.error(
+            f"Regenerated file '{comparison_file_path.name}'\n"
             + f"is not the same as original '{md.name}'\n"
         )

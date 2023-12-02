@@ -50,7 +50,7 @@ def a_check(
     def _check(md: Path):
         console.print(f"{md.name} ", end="")
         assert md.exists(), f"{md} does not exist"
-        console.print(f"[{check_markdown(md)}]")
+        console.print(check_markdown(md))
 
     if filename:
         _check(Path(filename))

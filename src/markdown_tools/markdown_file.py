@@ -1,15 +1,14 @@
 #: markdown_file.py
-# TODO: can we get rid of separator, __str__ and __repr__?
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias
-from markdown_tools import LANGUAGES, LanguageInfo, separator, console
+from markdown_tools import LANGUAGES, LanguageInfo, console
 from .error_reporter import check, CallTracker
 from rich.panel import Panel
 from rich.console import Console, ConsoleOptions, RenderResult
-from rich.rule import Rule
 from rich.text import Text
 import rich.markdown
+from rich.console import group
 
 
 @dataclass
@@ -78,9 +77,6 @@ class Markdown(metaclass=CallTracker):
 
     def __repr__(self) -> str:
         return f"{self.text}"
-
-    def __str__(self) -> str:
-        return separator("MarkdownText") + repr(self)
 
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
@@ -214,14 +210,6 @@ class SourceCode(metaclass=CallTracker):
             + "```\n"
         )
 
-    def __str__(self) -> str:
-        return (
-            separator("SourceCode")
-            + repr(self)
-            + f"{self.source_file_name = }\n"
-            + f"{self.language_name = } {self.ignore = }"
-        )
-
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
@@ -252,14 +240,11 @@ class Comment(metaclass=CallTracker):
     def __repr__(self) -> str:
         return "".join(self.comment)
 
-    def __str__(self) -> str:
-        return "\n" + separator("Comment") + repr(self)
-
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         yield Panel(
-            Text("".join(self.comment)),
+            Text(repr(self)),
             title="Comment",
         )
 
@@ -394,22 +379,19 @@ class CodePath(metaclass=CallTracker):
     def __repr__(self) -> str:
         return repr(self.comment)
 
-    def __str__(self) -> str:
-        return (
-            "\n"
-            + separator("CodePath")
-            + f"path: [{self.path}]\n"
-            + f"url: [{self.url}]\n"
-            + repr(self)
-        )
-
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
-        yield Rule("CodePath", align="left")
-        yield f"path: [{self.path}]"
-        yield f"url: [{self.url}]"
-        yield self.comment
+        @group()
+        def parts():
+            yield Text(f"path: [{self.path}]\nurl: [{self.url}]")
+            yield Panel(
+                "".join(self.comment.comment).strip(),
+                title="Source",
+                border_style="cyan2",
+            )
+
+        yield Panel(parts(), title="CodePath", border_style="green")
 
 
 MarkdownPart: TypeAlias = Markdown | SourceCode | CodePath | Comment

@@ -1,5 +1,4 @@
 # update_listings.py
-from difflib import context_diff
 from pathlib import Path
 from markdown_tools import (
     MarkdownFile,
@@ -9,6 +8,7 @@ from markdown_tools import (
     console,
 )
 from rich.panel import Panel
+from rich.console import group
 import difflib
 
 
@@ -98,9 +98,19 @@ def check_code_listings(md: Path):
 
 
 def display_markdown_comments(md: Path):
-    console.print(f"{md}:")
-    for comment in MarkdownFile(md).comments():
-        assert isinstance(comment, Comment) or isinstance(
-            comment, CodePath
+    @group()
+    def parts():
+        for comment in MarkdownFile(md).comments():
+            assert isinstance(comment, Comment) or isinstance(
+                comment, CodePath
+            )
+            yield comment
+
+    console.print(
+        Panel(
+            parts(),
+            title=f"{md}",
+            border_style="yellow",
         )
-        console.print(comment)
+    )
+    console.print()
