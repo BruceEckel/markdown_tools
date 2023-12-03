@@ -5,11 +5,11 @@ from markdown_tools import (
     SourceCode,
     Comment,
     CodePath,
-    console,
 )
 from rich.panel import Panel
 from rich.console import group
 import difflib
+from .console import console
 
 
 def compare_strings(str1: str, str2: str) -> list[str]:

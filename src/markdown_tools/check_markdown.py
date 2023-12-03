@@ -1,8 +1,9 @@
 #: check_markdown.py
 from io import StringIO
 from pathlib import Path
-from markdown_tools import MarkdownFile, console
+from markdown_tools import MarkdownFile
 from .error_reporter import check
+from .console import console
 
 
 def check_markdown(md: Path):

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Callable, List, NoReturn
 from functools import wraps
 import sys
-from markdown_tools import console
+from .console import console
 from dataclasses import dataclass
 
 

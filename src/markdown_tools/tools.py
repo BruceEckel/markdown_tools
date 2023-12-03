@@ -12,10 +12,10 @@ from markdown_tools import (
     insert_codepath_tags,
     validate_codepath_tags,
     NumberedFile,
-    console,
 )
 from pathlib import Path
 import platform
+from .console import console
 
 from markdown_tools.update_listings import (
     compare_listings_to_source_files,

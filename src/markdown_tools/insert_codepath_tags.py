@@ -1,6 +1,7 @@
 #: insert_codepath_tags.py
 from pathlib import Path
-from markdown_tools import MarkdownFile, CodePath, SourceCode, console
+from markdown_tools import MarkdownFile, CodePath, SourceCode
+from .console import console
 
 
 def validate_codepath_tags(md: Path):
