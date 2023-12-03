@@ -12,7 +12,7 @@ from rich.console import group
 import difflib
 
 
-def compare_strings(str1: str, str2: str):
+def compare_strings(str1: str, str2: str) -> list[str]:
     n1, n2 = 1, 1
     result = []
 
