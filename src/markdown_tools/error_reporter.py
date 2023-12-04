@@ -6,7 +6,7 @@ from .console import console
 from dataclasses import dataclass
 
 
-class ErrorReporter:
+class _ErrorReporter:
     def __init__(self) -> None:
         self.trace: List[str] = []
         self.input_file: Path | None = None
@@ -49,7 +49,7 @@ class ErrorReporter:
             self.error(msg)
 
 
-check = ErrorReporter()
+check = _ErrorReporter()
 
 
 # Decorator for standalone functions

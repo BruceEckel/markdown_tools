@@ -9,7 +9,6 @@ from .markdown_file import (  # noqa: F401
     CodePath,
     MarkdownPart,
 )
-from .error_reporter import ErrorReporter  # noqa: F401
 from .check_markdown import check_markdown  # noqa: F401
 from .numbered_file import NumberedFile, Result  # noqa: F401
 from .insert_codepath_tags import (  # noqa: F401
