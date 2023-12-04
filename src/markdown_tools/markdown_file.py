@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, List, Tuple, Union, TypeAlias
-from markdown_tools import LANGUAGES, LanguageInfo
+from .languages import LanguageInfo, LANGUAGES
 from .console import console
 from .error_reporter import check, CallTracker
 from rich.panel import Panel

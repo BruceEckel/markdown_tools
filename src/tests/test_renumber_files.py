@@ -1,6 +1,5 @@
 # test_renumber_files.py
-import pytest
-from markdown_tools import NumberedFile, Result
+from markdown_tools.numbered_file import NumberedFile, Result
 from pathlib import Path
 
 

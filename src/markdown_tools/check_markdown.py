@@ -1,7 +1,7 @@
 #: check_markdown.py
 from io import StringIO
 from pathlib import Path
-from markdown_tools import MarkdownFile
+from .markdown_file import MarkdownFile
 from .error_reporter import check
 from .console import console
 

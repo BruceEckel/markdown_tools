@@ -1,6 +1,6 @@
 # update_listings.py
 from pathlib import Path
-from markdown_tools import (
+from .markdown_file import (
     MarkdownFile,
     SourceCode,
     Comment,

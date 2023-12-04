@@ -6,13 +6,13 @@ import os
 import typer
 from typing import List, Optional
 from typing_extensions import Annotated
-from markdown_tools import (
-    display_markdown_comments,
-    check_markdown,
+from markdown_tools.check_markdown import check_markdown
+from markdown_tools.update_listings import display_markdown_comments
+from markdown_tools.insert_codepath_tags import (
     insert_codepath_tags,
     validate_codepath_tags,
-    NumberedFile,
 )
+from markdown_tools.numbered_file import NumberedFile
 from pathlib import Path
 import platform
 from .console import console
