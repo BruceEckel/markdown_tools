@@ -8,32 +8,8 @@ from .markdown_file import (
 )
 from rich.panel import Panel
 from rich.console import group
-import difflib
 from .console import console
-
-
-def compare_strings(str1: str, str2: str) -> list[str]:
-    n1, n2 = 1, 1
-    result = []
-
-    for line in list(
-        difflib.Differ().compare(str1.splitlines(), str2.splitlines())
-    ):
-        if line.startswith("  "):
-            # Line present in both strings
-            result.append(f"  {n1:4} {n2:4} {line}")
-            n1 += 1
-            n2 += 1
-        elif line.startswith("- "):
-            # Line present in str1 but not in str2
-            result.append(f"- {n1:4}      {line}")
-            n1 += 1
-        elif line.startswith("+ "):
-            # Line present in str2 but not in str1
-            result.append(f"+      {n2:4} {line}")
-            n2 += 1
-
-    return result
+from .compare_strings import compare_strings
 
 
 def compare_listings_to_source_files(md: Path):
@@ -48,19 +24,18 @@ def compare_listings_to_source_files(md: Path):
         ), f"ERROR: {full_path.as_posix()} does not exist"
         console.rule(f"{full_path.as_posix()}", align="left")
         source_file = SourceCode.from_source_file(full_path)
+        diff = compare_strings(source_code.code, source_file.code)
+        if diff.result.
         if source_file == source_code:
             console.print("[green bold][MATCH]")
         else:
             console.print("[red bold][DOES NOT MATCH]")
             console.print("In Markdown:", source_code)
             console.print("Source code file:", source_file)
-            diff = compare_strings(
-                source_code.code,
-                source_file.code,
-            )
             console.print(
                 Panel(
-                    "\n".join(diff), title="Diff: Markdown <-> Source"
+                    "\n".join(diff.diffs),
+                    title="Diff: Markdown <-> Source",
                 )
             )
 
