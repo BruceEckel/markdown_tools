@@ -9,7 +9,7 @@ from .markdown_file import (
 from rich.panel import Panel
 from rich.console import group
 from .console import console
-from .compare_strings import compare_strings
+from .compare_strings import compare_strings, DiffResult
 
 
 def compare_listings_to_source_files(md: Path):
@@ -22,22 +22,37 @@ def compare_listings_to_source_files(md: Path):
         assert (
             full_path.exists()
         ), f"ERROR: {full_path.as_posix()} does not exist"
-        console.rule(f"{full_path.as_posix()}", align="left")
+        # console.print(f"{full_path.as_posix()}", end=": ")
         source_file = SourceCode.from_source_file(full_path)
         diff = compare_strings(source_code.code, source_file.code)
-        if diff.result.
-        if source_file == source_code:
-            console.print("[green bold][MATCH]")
-        else:
-            console.print("[red bold][DOES NOT MATCH]")
-            console.print("In Markdown:", source_code)
-            console.print("Source code file:", source_file)
-            console.print(
-                Panel(
-                    "\n".join(diff.diffs),
-                    title="Diff: Markdown <-> Source",
+        match diff.result:
+            case DiffResult.NONE:
+                assert source_file == source_code
+                console.print(
+                    f"[green bold][MATCH][/ green bold]: {full_path.as_posix()}"
                 )
-            )
+            case DiffResult.BLANK_LINES:
+                console.print(
+                    f"[blue_violet bold][BLANK LINES ONLY CHANGED][/ blue_violet bold]: {full_path.as_posix()}"
+                )
+                console.print(
+                    Panel(
+                        "\n".join(diff.diffs),
+                        title="Diff: Markdown <-> Source",
+                    )
+                )
+            case DiffResult.CONTENT:
+                console.print(
+                    f"[red bold][CONTENT DOES NOT MATCH][/ red bold]: {full_path.as_posix()}"
+                )
+                console.print(
+                    Panel(
+                        "\n".join(diff.diffs),
+                        title="Diff: Markdown <-> Source",
+                    )
+                )
+                console.print("In Markdown:", source_code)
+                console.print("Source code file:", source_file)
 
 
 def update_listings(md: Path):

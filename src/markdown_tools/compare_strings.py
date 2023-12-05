@@ -16,14 +16,24 @@ class CompareResult:
     diffs: list[str]
 
 
-def compare_strings(str1: str, str2: str) -> CompareResult:
-    n1, n2 = 1, 1
-    differences = []
-    result = DiffResult.NONE
+def only_differs_by_blank_lines(str1: str, str2: str) -> bool:
+    def no_blank_lines(with_blanks: str) -> list[str]:
+        return [
+            line
+            for line in with_blanks.splitlines(True)
+            if line.strip()
+        ]
 
-    for line in list(
+    return no_blank_lines(str1) == no_blank_lines(str2)
+
+
+def create_diffs(str1: str, str2: str) -> list[str]:
+    differences = []
+    n1, n2 = 1, 1
+    diffs = list(
         difflib.Differ().compare(str1.splitlines(), str2.splitlines())
-    ):
+    )
+    for line in diffs:
         if line.startswith("  "):
             # Line present in both strings
             differences.append(f"  {n1:4} {n2:4} {line}")
@@ -33,17 +43,20 @@ def compare_strings(str1: str, str2: str) -> CompareResult:
             # Line present in str1 but not in str2
             differences.append(f"- {n1:4}      {line}")
             n1 += 1
-            if result == DiffResult.NONE:
-                result = DiffResult.BLANK_LINES
-            if not line.isspace():
-                result = DiffResult.CONTENT
         elif line.startswith("+ "):
             # Line present in str2 but not in str1
             differences.append(f"+      {n2:4} {line}")
             n2 += 1
-            if result == DiffResult.NONE:
-                result = DiffResult.BLANK_LINES
-            if not line.isspace():
-                result = DiffResult.CONTENT
+    return differences
 
-    return CompareResult(result=result, diffs=differences)
+
+def compare_strings(str1: str, str2: str) -> CompareResult:
+    diffs = create_diffs(str1, str2)
+
+    if str1 == str2:
+        return CompareResult(DiffResult.NONE, diffs)
+
+    if only_differs_by_blank_lines(str1, str2):
+        return CompareResult(DiffResult.BLANK_LINES, diffs)
+
+    return CompareResult(DiffResult.CONTENT, diffs)
