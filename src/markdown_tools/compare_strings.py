@@ -41,11 +41,15 @@ def create_diffs(str1: str, str2: str) -> list[str]:
             n2 += 1
         elif line.startswith("- "):
             # Line present in str1 but not in str2
-            differences.append(f"- {n1:4}      {line}")
+            differences.append(
+                f"[dark_red]- {n1:4}      {line}[/dark_red]"
+            )
             n1 += 1
         elif line.startswith("+ "):
             # Line present in str2 but not in str1
-            differences.append(f"+      {n2:4} {line}")
+            differences.append(
+                f"[dark_magenta]+      {n2:4} {line}[/dark_magenta]"
+            )
             n2 += 1
     return differences
 

@@ -6,7 +6,7 @@ from .markdown_file import (
     Comment,
     CodePath,
 )
-from rich.panel import Panel
+from rich.panel import Panel, Text
 from rich.console import group
 from .console import console
 from .compare_strings import compare_strings, DiffResult
@@ -28,12 +28,18 @@ def compare_listings_to_source_files(md: Path):
         match diff.result:
             case DiffResult.NONE:
                 assert source_file == source_code
+                p = Panel(
+                    Text(full_path.as_posix(), style="green"),
+                    title="[turquoise2 bold][MATCH][/ turquoise2 bold]",
+                    title_align="left",
+                )
+                console.print(p)
                 console.print(
-                    f"[green bold][MATCH][/ green bold]: {full_path.as_posix()}"
+                    f"[turquoise2 bold][MATCH][/ turquoise2 bold]: {full_path.as_posix()}"
                 )
             case DiffResult.BLANK_LINES:
                 console.print(
-                    f"[blue_violet bold][BLANK LINES ONLY CHANGED][/ blue_violet bold]: {full_path.as_posix()}"
+                    f"[bright_blue bold][BLANK LINES ONLY CHANGED][/ bright_blue bold]: {full_path.as_posix()}"
                 )
                 console.print(
                     Panel(
@@ -43,7 +49,7 @@ def compare_listings_to_source_files(md: Path):
                 )
             case DiffResult.CONTENT:
                 console.print(
-                    f"[red bold][CONTENT DOES NOT MATCH][/ red bold]: {full_path.as_posix()}"
+                    f"[bright_red][CONTENT DIFFERENCE][/ bright_red]: {full_path.as_posix()}"
                 )
                 console.print(
                     Panel(
