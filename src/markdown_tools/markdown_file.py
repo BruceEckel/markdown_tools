@@ -391,9 +391,15 @@ class CodePath(metaclass=CallTracker):
                 "".join(self.comment.comment).strip(),
                 title="Source",
                 border_style="cyan2",
+                title_align="left",
             )
 
-        yield Panel(parts(), title="CodePath", border_style="green")
+        yield Panel(
+            parts(),
+            title="CodePath",
+            border_style="green",
+            title_align="left",
+        )
 
 
 MarkdownPart: TypeAlias = Markdown | SourceCode | CodePath | Comment

@@ -71,21 +71,6 @@ def update_listings(md: Path):
             # 2. md_file[md_file.index_of(source_code)] = new_source_code
 
 
-# def check_code_block(scl: SourceCode) -> str | None:
-#     if scl.language_name == "text" or scl.ignore:
-#         return None
-#     return f"{scl.language_name}: {scl.source_file_name}"
-
-
-# def check_code_listings(md: Path):
-#     md_file = MarkdownFile(md)
-#     for listing in md_file.code_listings():
-#         assert isinstance(listing, SourceCode)
-#         if r := check_code_block(listing):
-#             md_file.display_name_once()
-#             console.print(r)
-
-
 def display_markdown_comments(md: Path):
     @group()
     def parts():
@@ -100,6 +85,7 @@ def display_markdown_comments(md: Path):
             parts(),
             title=f"{md}",
             border_style="yellow",
+            title_align="left",
         )
     )
     console.print()
