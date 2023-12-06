@@ -10,6 +10,7 @@ from rich.console import Console, ConsoleOptions, RenderResult
 from rich.text import Text
 import rich.markdown
 from rich.console import group
+from rich import box
 
 
 @dataclass
@@ -433,7 +434,18 @@ class MarkdownFile(metaclass=CallTracker):
         if self.name_already_displayed:
             return
         self.name_already_displayed = True
-        console.rule(self.file_path.name, style="bold red")
+        console.print(
+            Panel(
+                Text(
+                    self.file_path.name,
+                    style="cyan2",
+                ),
+                title="[cyan2]File",
+                title_align="left",
+                border_style="purple4",
+                box=box.DOUBLE,
+            )
+        )
 
     def write_new_file(self, file_path: Path) -> None:
         file_path.write_text(

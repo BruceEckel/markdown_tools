@@ -2,6 +2,8 @@
 import difflib
 from enum import Enum
 from dataclasses import dataclass
+from .console import console
+from rich.panel import Panel
 
 
 class DiffResult(Enum):
@@ -14,6 +16,16 @@ class DiffResult(Enum):
 class CompareResult:
     result: DiffResult
     diffs: list[str]
+
+    def show(self):
+        console.print(
+            Panel(
+                "\n".join(self.diffs),
+                title="[gold3]Diff: Markdown <-> Source",
+                title_align="left",
+                border_style="steel_blue3",
+            )
+        )
 
 
 def only_differs_by_blank_lines(str1: str, str2: str) -> bool:
@@ -28,7 +40,7 @@ def only_differs_by_blank_lines(str1: str, str2: str) -> bool:
 
 
 def create_diffs(str1: str, str2: str) -> list[str]:
-    differences = []
+    differences: list[str] = []
     n1, n2 = 1, 1
     diffs = list(
         difflib.Differ().compare(str1.splitlines(), str2.splitlines())

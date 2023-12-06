@@ -90,11 +90,16 @@ def c_listings(
     """
     Validates code listings within Markdown files.
     """
+    file_edit_script = Path("edit_changed_files.ps1")
+    if file_edit_script.exists():
+        file_edit_script.unlink()
     if filename:
-        compare_listings_to_source_files(Path(filename))
+        compare_listings_to_source_files(
+            Path(filename), file_edit_script
+        )
     else:
         for md in Path(".").glob("*.md"):
-            compare_listings_to_source_files(md)
+            compare_listings_to_source_files(md, file_edit_script)
 
 
 @cli.command()
