@@ -3,7 +3,10 @@ name = "markdown-tools"
 version = "0.1.0"
 description = "For working with markdown chapters in a programming book"
 authors = [{ name = "Bruce Eckel", email = "MindviewInc@gmail.com" }]
-dependencies = ["typer[all]>=0.9.0"]
+dependencies = [
+    "typer[all]>=0.9.0",
+    "textual>=0.44.1",
+]
 readme = "README.md"
 requires-python = ">= 3.8"
 
