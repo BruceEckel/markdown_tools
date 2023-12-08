@@ -9,6 +9,7 @@ from .markdown_file import (
 )
 from rich.panel import Panel, Text
 from rich.console import group
+from rich.prompt import Prompt, Confirm
 from .console import console
 from .compare_strings import compare_strings, DiffResult
 from .vscode_open import vscode_open
@@ -48,10 +49,12 @@ def compare_listings_to_source_files(
             case DiffResult.BLANK_LINES:
                 show_result("[green3][BLANK LINES ONLY CHANGED]")
                 diff.show()
+                Prompt.ask("CR to continue")
             case DiffResult.CONTENT:
                 vscode_open(file_edit_script, full_path)
                 show_result("[bright_red][CONTENT DIFFERENCE]")
                 diff.show()
+                Confirm.ask("Continue")
 
 
 def update_listings(md: Path):
