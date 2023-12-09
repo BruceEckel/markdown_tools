@@ -6,6 +6,7 @@ authors = [{ name = "Bruce Eckel", email = "MindviewInc@gmail.com" }]
 dependencies = [
     "typer[all]>=0.9.0",
     "textual>=0.44.1",
+    "readchar>=4.0.5",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"

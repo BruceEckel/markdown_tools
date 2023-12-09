@@ -507,7 +507,7 @@ class MarkdownFile(metaclass=CallTracker):
             if not part.language_name == "text" and not part.ignore
         ]
 
-    def code_path_and_source_code(
+    def code_path_and_example_code(
         self,
     ) -> Iterator[Tuple[CodePath, SourceCode]]:
         """

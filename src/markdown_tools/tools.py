@@ -3,24 +3,24 @@
 Tests and maintains Markdown files containing embedded code listings.
 """
 import os
-import typer
 from typing import List, Optional
 from typing_extensions import Annotated
+from pathlib import Path
+import platform
+import typer
+from markdown_tools.console import console
 from markdown_tools.check_markdown import check_markdown
-from markdown_tools.update_listings import display_markdown_comments
 from markdown_tools.insert_codepath_tags import (
     insert_codepath_tags,
     validate_codepath_tags,
 )
 from markdown_tools.numbered_file import NumberedFile
-from pathlib import Path
-import platform
-from .console import console
-
 from markdown_tools.update_listings import (
-    compare_listings_to_source_files,
+    display_markdown_comments,
+    check_examples_against_source_code,
     update_listings,
 )
+
 
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
 
@@ -88,18 +88,18 @@ def c_listings(
     ] = None
 ):
     """
-    Validates code listings within Markdown files.
+    Compares code listings within Markdown files to source-code files.
     """
     file_edit_script = Path("edit_changed_files.ps1")
     if file_edit_script.exists():
         file_edit_script.unlink()
     if filename:
-        compare_listings_to_source_files(
+        check_examples_against_source_code(
             Path(filename), file_edit_script
         )
     else:
         for md in Path(".").glob("*.md"):
-            compare_listings_to_source_files(md, file_edit_script)
+            check_examples_against_source_code(md, file_edit_script)
 
 
 @cli.command()
