@@ -15,11 +15,13 @@ from markdown_tools.insert_codepath_tags import (
     validate_codepath_tags,
 )
 from markdown_tools.numbered_file import NumberedFile
+from markdown_tools.edit_changed_examples import edit_example_changes
 from markdown_tools.update_examples import (
     update_examples_with_source_code,
 )
 from markdown_tools.display_comments import display_markdown_comments
 
+# import readchar
 
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
 
@@ -31,7 +33,7 @@ cli = typer.Typer(
 
 
 @cli.command()
-def a_check(
+def a(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -59,7 +61,7 @@ def a_check(
 
 
 @cli.command()
-def b_check_comments(
+def b(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -78,7 +80,29 @@ def b_check_comments(
 
 
 @cli.command()
-def c_examples(
+def c(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
+    """
+    Edits changed examples in source code files.
+    """
+    file_edit_script = Path("edit_changed_files.ps1")
+    if file_edit_script.exists():
+        file_edit_script.unlink()
+    if filename:
+        edit_example_changes(Path(filename), file_edit_script)
+    else:
+        for md in Path(".").glob("*.md"):
+            edit_example_changes(md, file_edit_script)
+
+
+@cli.command()
+def d(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -93,16 +117,14 @@ def c_examples(
     if file_edit_script.exists():
         file_edit_script.unlink()
     if filename:
-        update_examples_with_source_code(
-            Path(filename), file_edit_script
-        )
+        update_examples_with_source_code(Path(filename))
     else:
         for md in Path(".").glob("*.md"):
-            update_examples_with_source_code(md, file_edit_script)
+            update_examples_with_source_code(md)
 
 
 @cli.command()
-def d_renumber(
+def e(
     go: Annotated[
         Optional[str],
         typer.Argument(help="'go': perform the changes"),
@@ -143,7 +165,7 @@ def d_renumber(
 
 
 @cli.command()
-def e_validate_code_paths(
+def f(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -164,7 +186,7 @@ def e_validate_code_paths(
 
 
 @cli.command()
-def f_insert_code_paths(
+def g(
     filename: Annotated[
         Optional[str],
         typer.Argument(

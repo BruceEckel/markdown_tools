@@ -6,15 +6,11 @@ from markdown_tools.markdown_file import (
     check,
 )
 from markdown_tools.utils import prompt
-from rich.panel import Panel, Text
 from markdown_tools.console import console
 from markdown_tools.compare_strings import compare_strings, DiffResult
-from markdown_tools.vscode_open import vscode_open
 
 
-def update_examples_with_source_code(
-    md: Path, file_edit_script: Path
-) -> None:
+def update_examples_with_source_code(md: Path) -> None:
     md_file = MarkdownFile(md)
     md_file.display_name_once()
     for (
@@ -31,17 +27,10 @@ def update_examples_with_source_code(
 
         source_file = SourceCode.from_source_file(full_path)
         diff = compare_strings(example_code.code, source_file.code)
-        console.print(
-            Panel(
-                Text(full_path.as_posix(), style="green"),
-                title=diff.result.value,
-                title_align="left",
-                border_style="cadet_blue",
-            )
-        )
+        diff.show_result(full_path)
 
         def prompt_and_update():
-            diff.show()
+            diff.show_diffs()
             if prompt():
                 console.print(
                     "Replacing markdown example with source file"
@@ -59,5 +48,4 @@ def update_examples_with_source_code(
             case DiffResult.BLANK_LINES:
                 prompt_and_update()
             case DiffResult.CONTENT:
-                vscode_open(file_edit_script, full_path)
                 prompt_and_update()

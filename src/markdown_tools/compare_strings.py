@@ -1,9 +1,10 @@
 # compare_strings.py
 import difflib
+from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass
 from .console import console
-from rich.panel import Panel
+from rich.panel import Panel, Text
 
 
 class DiffResult(Enum):
@@ -17,13 +18,23 @@ class CompareResult:
     result: DiffResult
     diffs: list[str]
 
-    def show(self):
+    def show_diffs(self):
         console.print(
             Panel(
                 "\n".join(self.diffs),
                 title="[gold3]Diff: [dark_red]Markdown[/dark_red] <-> [dark_magenta]Source",
                 title_align="left",
                 border_style="steel_blue3",
+            )
+        )
+
+    def show_result(self, path: Path):
+        console.print(
+            Panel(
+                Text(path.as_posix(), style="green"),
+                title=self.result.value,
+                title_align="left",
+                border_style="cadet_blue",
             )
         )
 
