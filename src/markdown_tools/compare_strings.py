@@ -7,9 +7,9 @@ from rich.panel import Panel
 
 
 class DiffResult(Enum):
-    NONE = "No difference"
-    BLANK_LINES = "Only blank lines added/subtracted"
-    CONTENT = "Content difference"
+    NONE = "[turquoise2 bold][MATCH]"
+    BLANK_LINES = "[green3][BLANK LINES ONLY CHANGED]"
+    CONTENT = "[bright_red][CONTENT DIFFERENCE]"
 
 
 @dataclass
@@ -21,7 +21,7 @@ class CompareResult:
         console.print(
             Panel(
                 "\n".join(self.diffs),
-                title="[gold3]Diff: Markdown <-> Source",
+                title="[gold3]Diff: [dark_red]Markdown[/dark_red] <-> [dark_magenta]Source",
                 title_align="left",
                 border_style="steel_blue3",
             )

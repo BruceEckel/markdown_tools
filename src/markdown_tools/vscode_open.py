@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def vscode_open(opener_ps1: Path, file_to_open: Path) -> None:
-    print(f"{opener_ps1.as_posix() = }, {file_to_open = }")
+    # print(f"{opener_ps1.as_posix() = }, {file_to_open = }")
     if opener_ps1.exists():
         lines = opener_ps1.read_text().splitlines()
     else:
@@ -48,7 +48,7 @@ def vscode_open(opener_ps1: Path, file_to_open: Path) -> None:
 
     # Write the updated script back to the file
     opener_ps1.write_text("\n".join(lines) + "\n")
-    print(opener_ps1.read_text())
+    # print(opener_ps1.read_text())
 
 
 if __name__ == "__main__":  # Example usage

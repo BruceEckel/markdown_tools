@@ -15,11 +15,10 @@ from markdown_tools.insert_codepath_tags import (
     validate_codepath_tags,
 )
 from markdown_tools.numbered_file import NumberedFile
-from markdown_tools.update_listings import (
-    display_markdown_comments,
-    check_examples_against_source_code,
-    update_listings,
+from markdown_tools.update_examples import (
+    update_examples_with_source_code,
 )
+from markdown_tools.display_comments import display_markdown_comments
 
 
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
@@ -79,7 +78,7 @@ def b_check_comments(
 
 
 @cli.command()
-def c_listings(
+def c_examples(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -88,41 +87,22 @@ def c_listings(
     ] = None
 ):
     """
-    Compares code listings within Markdown files to source-code files.
+    Updates examples in markdown from source code files.
     """
     file_edit_script = Path("edit_changed_files.ps1")
     if file_edit_script.exists():
         file_edit_script.unlink()
     if filename:
-        check_examples_against_source_code(
+        update_examples_with_source_code(
             Path(filename), file_edit_script
         )
     else:
         for md in Path(".").glob("*.md"):
-            check_examples_against_source_code(md, file_edit_script)
+            update_examples_with_source_code(md, file_edit_script)
 
 
 @cli.command()
-def d_update_listings(
-    filename: Annotated[
-        Optional[str],
-        typer.Argument(
-            help="Markdown file to check (None: all files)"
-        ),
-    ] = None
-):
-    """
-    Updates code listings from source code files.
-    """
-    if filename:
-        update_listings(Path(filename))
-    else:
-        for md in Path(".").glob("*.md"):
-            update_listings(md)
-
-
-@cli.command()
-def e_renumber(
+def d_renumber(
     go: Annotated[
         Optional[str],
         typer.Argument(help="'go': perform the changes"),
@@ -163,7 +143,7 @@ def e_renumber(
 
 
 @cli.command()
-def f_validate_code_paths(
+def e_validate_code_paths(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -184,7 +164,7 @@ def f_validate_code_paths(
 
 
 @cli.command()
-def g_insert_code_paths(
+def f_insert_code_paths(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -205,6 +185,10 @@ def g_insert_code_paths(
 
 
 def main():
+    """Called in pyproject.toml:
+    [project.scripts]
+    mt = "markdown_tools.tools:main"
+    """
     os.system(clear_screen)
     cli()
 

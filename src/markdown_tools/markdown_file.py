@@ -459,6 +459,10 @@ class MarkdownFile(metaclass=CallTracker):
             encoding="utf-8",
         )
 
+    def update(self) -> None:
+        "Write out changes into the original file"
+        self.write_new_file(self.file_path)
+
     def contains(self, item: type) -> bool:
         return any(isinstance(part, item) for part in self.contents)
 
