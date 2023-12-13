@@ -15,7 +15,6 @@ from markdown_tools.vscode_open import vscode_open
 
 def edit_example_changes(md: Path, file_edit_script: Path) -> None:
     md_file = MarkdownFile(md)
-    md_file.display_name_once()
     for (
         code_path,
         example_code,
@@ -29,6 +28,6 @@ def edit_example_changes(md: Path, file_edit_script: Path) -> None:
         )
         source_file = SourceCode.from_source_file(full_path)
         diff = compare_strings(example_code.code, source_file.code)
-        diff.show_result(full_path)
         if diff.result == DiffResult.CONTENT:
+            diff.show_diffs(md_file)
             vscode_open(file_edit_script, full_path)

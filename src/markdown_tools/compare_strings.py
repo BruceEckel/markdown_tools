@@ -3,6 +3,7 @@ import difflib
 from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass
+from markdown_tools.markdown_file import MarkdownFile
 from .console import console
 from rich.panel import Panel, Text
 
@@ -18,7 +19,8 @@ class CompareResult:
     result: DiffResult
     diffs: list[str]
 
-    def show_diffs(self):
+    def show_diffs(self, md_file: MarkdownFile):
+        md_file.display_name_once()
         console.print(
             Panel(
                 "\n".join(self.diffs),

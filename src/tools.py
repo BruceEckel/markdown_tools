@@ -6,6 +6,7 @@ import os
 from typing import List, Optional
 from typing_extensions import Annotated
 from pathlib import Path
+import subprocess
 import platform
 import typer
 from markdown_tools.console import console
@@ -20,14 +21,8 @@ from markdown_tools.update_examples import (
     update_examples_with_source_code,
 )
 from markdown_tools.display_comments import display_markdown_comments
-
+from rich.panel import Panel, Text
 import readchar
-
-clear_screen = "cls" if platform.system() == "Windows" else "clear"
-
-
-def callback():
-    print("Running a command")
 
 
 app = typer.Typer(
@@ -35,11 +30,34 @@ app = typer.Typer(
     add_completion=False,
     context_settings={"help_option_names": ["-h"]},
     rich_markup_mode="rich",
-    callback=callback,
 )
 
 
-@app.command(rich_help_panel="Validation")
+def clear_screen():
+    os.system("cls" if platform.system() == "Windows" else "clear")
+
+
+def display(msg: str, style: str = "green") -> None:
+    console.print(Panel(Text(msg, style=style)))
+
+
+def run_powershell(script_path: Path):
+    command = [
+        "powershell",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        str(script_path),
+    ]
+    try:
+        subprocess.run(
+            command, check=True, text=True, capture_output=True
+        )
+    except subprocess.CalledProcessError as e:
+        print("An error occurred:", e)
+
+
+@app.command("1", rich_help_panel="Validation")
 def a(
     filename: Annotated[
         Optional[str],
@@ -49,7 +67,7 @@ def a(
     ] = None
 ):
     """
-    Basic validation of Markdown files.
+    Basic validation of Markdown files
     """
     for tmp_file in Path(".").glob("*.tmp.md"):
         console.print(f"Removing {tmp_file.name}")
@@ -76,9 +94,7 @@ def b(
         ),
     ] = None
 ):
-    """
-    List parsed comments
-    """
+    "Display Markdown Comments that follow special format"
     if filename:
         display_markdown_comments(Path(filename))
     else:
@@ -86,7 +102,7 @@ def b(
             display_markdown_comments(md)
 
 
-@app.command(rich_help_panel="Modification")
+@app.command(rich_help_panel="Validation")
 def c(
     filename: Annotated[
         Optional[str],
@@ -96,7 +112,28 @@ def c(
     ] = None
 ):
     """
-    Edits changed examples in source code files.
+    Verify code path comment tags are correct
+    """
+    if filename:
+        validate_codepath_tags(Path(filename))
+    else:
+        for md in [
+            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
+        ]:
+            validate_codepath_tags(md)
+
+
+@app.command(rich_help_panel="Validation")
+def d(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None
+):
+    """
+    Opens VSCode on changed examples in source code files
     """
     file_edit_script = Path("edit_changed_files.ps1")
     if file_edit_script.exists():
@@ -107,9 +144,15 @@ def c(
         for md in Path(".").glob("*.md"):
             edit_example_changes(md, file_edit_script)
 
+    if file_edit_script.exists():
+        display(f"Executing {file_edit_script}")
+        run_powershell(file_edit_script)
+    else:
+        display("No content differences found.")
+
 
 @app.command(rich_help_panel="Modification")
-def d(
+def e(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -118,7 +161,7 @@ def d(
     ] = None
 ):
     """
-    Updates examples in markdown from source code files.
+    Updates examples in markdown from source code files
     """
     file_edit_script = Path("edit_changed_files.ps1")
     if file_edit_script.exists():
@@ -131,7 +174,28 @@ def d(
 
 
 @app.command(rich_help_panel="Modification")
-def e(
+def f(
+    filename: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Markdown file to check (None: all files)"
+        ),
+    ] = None,
+):
+    """
+    Insert code path comment tag in a file that doesn't have one
+    """
+    if filename:
+        insert_codepath_tags(Path(filename))
+    else:
+        for md in [
+            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
+        ]:
+            insert_codepath_tags(md)
+
+
+@app.command(rich_help_panel="Modification")
+def g(
     go: Annotated[
         Optional[str],
         typer.Argument(help="'go': perform the changes"),
@@ -171,54 +235,16 @@ def e(
     make_changes(appendix_changes)
 
 
-@app.command(rich_help_panel="Validation")
-def f(
-    filename: Annotated[
-        Optional[str],
-        typer.Argument(
-            help="Markdown file to check (None: all files)"
-        ),
-    ] = None
-):
+# Callback used here only to produce the __doc__ string
+@app.callback()
+def doc():
     """
-    Verify code path comment tags are correct.
+    Utilities for managing computer programming books written in Markdown
     """
-    if filename:
-        validate_codepath_tags(Path(filename))
-    else:
-        for md in [
-            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
-        ]:
-            validate_codepath_tags(md)
-
-
-@app.command(rich_help_panel="Modification")
-def g(
-    filename: Annotated[
-        Optional[str],
-        typer.Argument(
-            help="Markdown file to check (None: all files)"
-        ),
-    ] = None,
-):
-    """
-    Insert code path comment tag in a file that doesn't have one.
-    """
-    if filename:
-        insert_codepath_tags(Path(filename))
-    else:
-        for md in [
-            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
-        ]:
-            insert_codepath_tags(md)
 
 
 def main():
-    """Called in pyproject.toml:
-    [project.scripts]
-    mt = "tools:main"
-    """
-    os.system(clear_screen)
+    clear_screen()
     app()
     ch = readchar.readchar()
     match ch:

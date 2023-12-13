@@ -30,7 +30,7 @@ def update_examples_with_source_code(md: Path) -> None:
         diff.show_result(full_path)
 
         def prompt_and_update():
-            diff.show_diffs()
+            diff.show_diffs(md_file)
             if prompt():
                 console.print(
                     "Replacing markdown example with source file"
