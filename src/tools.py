@@ -21,7 +21,7 @@ from markdown_tools.update_examples import (
 )
 from markdown_tools.display_comments import display_markdown_comments
 
-# import readchar
+import readchar
 
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
 
@@ -29,10 +29,11 @@ cli = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
     context_settings={"help_option_names": ["-h"]},
+    rich_markup_mode="rich",
 )
 
 
-@cli.command()
+@cli.command(rich_help_panel="Validation")
 def a(
     filename: Annotated[
         Optional[str],
@@ -60,7 +61,7 @@ def a(
             _check(md)
 
 
-@cli.command()
+@cli.command(rich_help_panel="Validation")
 def b(
     filename: Annotated[
         Optional[str],
@@ -79,7 +80,7 @@ def b(
             display_markdown_comments(md)
 
 
-@cli.command()
+@cli.command(rich_help_panel="Modification")
 def c(
     filename: Annotated[
         Optional[str],
@@ -101,7 +102,7 @@ def c(
             edit_example_changes(md, file_edit_script)
 
 
-@cli.command()
+@cli.command(rich_help_panel="Modification")
 def d(
     filename: Annotated[
         Optional[str],
@@ -123,7 +124,7 @@ def d(
             update_examples_with_source_code(md)
 
 
-@cli.command()
+@cli.command(rich_help_panel="Modification")
 def e(
     go: Annotated[
         Optional[str],
@@ -164,7 +165,7 @@ def e(
     make_changes(appendix_changes)
 
 
-@cli.command()
+@cli.command(rich_help_panel="Validation")
 def f(
     filename: Annotated[
         Optional[str],
@@ -185,14 +186,14 @@ def f(
             validate_codepath_tags(md)
 
 
-@cli.command()
+@cli.command(rich_help_panel="Modification")
 def g(
     filename: Annotated[
         Optional[str],
         typer.Argument(
             help="Markdown file to check (None: all files)"
         ),
-    ] = None
+    ] = None,
 ):
     """
     Insert code path comment tag in a file that doesn't have one.
@@ -209,10 +210,28 @@ def g(
 def main():
     """Called in pyproject.toml:
     [project.scripts]
-    mt = "markdown_tools.tools:main"
+    mt = "tools:main"
     """
     os.system(clear_screen)
     cli()
+    ch = readchar.readchar()
+    match ch:
+        case "a":
+            console.print(f"{ch}", style="red")
+        case "b":
+            console.print(f"{ch}", style="red")
+        case "c":
+            console.print(f"{ch}", style="red")
+        case "d":
+            console.print(f"{ch}", style="red")
+        case "e":
+            console.print(f"{ch}", style="red")
+        case "f":
+            console.print(f"{ch}", style="red")
+        case "g":
+            console.print(f"{ch}", style="red")
+        case _:
+            console.print(f"other: {ch}", style="blue")
 
 
 if __name__ == "__main__":
