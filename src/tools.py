@@ -25,15 +25,21 @@ import readchar
 
 clear_screen = "cls" if platform.system() == "Windows" else "clear"
 
-cli = typer.Typer(
+
+def callback():
+    print("Running a command")
+
+
+app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
     context_settings={"help_option_names": ["-h"]},
     rich_markup_mode="rich",
+    callback=callback,
 )
 
 
-@cli.command(rich_help_panel="Validation")
+@app.command(rich_help_panel="Validation")
 def a(
     filename: Annotated[
         Optional[str],
@@ -61,7 +67,7 @@ def a(
             _check(md)
 
 
-@cli.command(rich_help_panel="Validation")
+@app.command(rich_help_panel="Validation")
 def b(
     filename: Annotated[
         Optional[str],
@@ -80,7 +86,7 @@ def b(
             display_markdown_comments(md)
 
 
-@cli.command(rich_help_panel="Modification")
+@app.command(rich_help_panel="Modification")
 def c(
     filename: Annotated[
         Optional[str],
@@ -102,7 +108,7 @@ def c(
             edit_example_changes(md, file_edit_script)
 
 
-@cli.command(rich_help_panel="Modification")
+@app.command(rich_help_panel="Modification")
 def d(
     filename: Annotated[
         Optional[str],
@@ -124,7 +130,7 @@ def d(
             update_examples_with_source_code(md)
 
 
-@cli.command(rich_help_panel="Modification")
+@app.command(rich_help_panel="Modification")
 def e(
     go: Annotated[
         Optional[str],
@@ -165,7 +171,7 @@ def e(
     make_changes(appendix_changes)
 
 
-@cli.command(rich_help_panel="Validation")
+@app.command(rich_help_panel="Validation")
 def f(
     filename: Annotated[
         Optional[str],
@@ -186,7 +192,7 @@ def f(
             validate_codepath_tags(md)
 
 
-@cli.command(rich_help_panel="Modification")
+@app.command(rich_help_panel="Modification")
 def g(
     filename: Annotated[
         Optional[str],
@@ -213,7 +219,7 @@ def main():
     mt = "tools:main"
     """
     os.system(clear_screen)
-    cli()
+    app()
     ch = readchar.readchar()
     match ch:
         case "a":
