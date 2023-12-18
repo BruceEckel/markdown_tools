@@ -19,7 +19,7 @@ class CompareResult:
     result: DiffResult
     diffs: list[str]
 
-    def show_diffs(self, md_file: MarkdownFile):
+    def show_diffs(self, md_file: MarkdownFile) -> None:
         md_file.display_name_once()
         console.print(
             Panel(
@@ -30,7 +30,7 @@ class CompareResult:
             )
         )
 
-    def show_result(self, path: Path):
+    def show_result(self, path: Path) -> None:
         console.print(
             Panel(
                 Text(path.as_posix(), style="green"),

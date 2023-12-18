@@ -163,9 +163,6 @@ def e(
     """
     Updates examples in markdown from source code files
     """
-    file_edit_script = Path("edit_changed_files.ps1")
-    if file_edit_script.exists():
-        file_edit_script.unlink()
     if filename:
         update_examples_with_source_code(Path(filename))
     else:

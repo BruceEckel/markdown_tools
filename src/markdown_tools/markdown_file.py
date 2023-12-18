@@ -444,11 +444,11 @@ class MarkdownFile(metaclass=CallTracker):
             Panel(
                 Text(
                     self.file_path.name,
-                    style="cyan2",
+                    style="green3",
                 ),
                 title="[cyan2]File",
                 title_align="left",
-                border_style="purple4",
+                border_style="yellow",
                 box=box.DOUBLE,
             )
         )
