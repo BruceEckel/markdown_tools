@@ -85,7 +85,7 @@ def a(
             _check(md)
 
 
-@app.command(rich_help_panel="Validation")
+@app.command("2", rich_help_panel="Validation")
 def b(
     filename: Annotated[
         Optional[str],
@@ -102,7 +102,7 @@ def b(
             display_markdown_comments(md)
 
 
-@app.command(rich_help_panel="Validation")
+@app.command("3", rich_help_panel="Validation")
 def c(
     filename: Annotated[
         Optional[str],
@@ -123,7 +123,7 @@ def c(
             validate_codepath_tags(md)
 
 
-@app.command(rich_help_panel="Validation")
+@app.command("4", rich_help_panel="Validation")
 def d(
     filename: Annotated[
         Optional[str],
@@ -151,7 +151,7 @@ def d(
         display("No content differences found.")
 
 
-@app.command(rich_help_panel="Modification")
+@app.command("5", rich_help_panel="Modification")
 def e(
     filename: Annotated[
         Optional[str],
@@ -173,7 +173,7 @@ def e(
             update_examples_with_source_code(md)
 
 
-@app.command(rich_help_panel="Modification")
+@app.command("6", rich_help_panel="Modification")
 def f(
     filename: Annotated[
         Optional[str],
@@ -194,7 +194,7 @@ def f(
             insert_codepath_tags(md)
 
 
-@app.command(rich_help_panel="Modification")
+@app.command("7", rich_help_panel="Modification")
 def g(
     go: Annotated[
         Optional[str],
@@ -243,27 +243,21 @@ def doc():
     """
 
 
-def main():
+# @app.command("m", rich_help_panel="Menu")
+def menu_callback(value: bool):
+    if value:
+        print("Menu Callback")
+        raise typer.Exit()
+
+
+def main(
+    menu: Annotated[
+        Optional[bool],
+        typer.Option("--menu", callback=menu_callback),
+    ] = None,
+):
     clear_screen()
     app()
-    ch = readchar.readchar()
-    match ch:
-        case "a":
-            console.print(f"{ch}", style="red")
-        case "b":
-            console.print(f"{ch}", style="red")
-        case "c":
-            console.print(f"{ch}", style="red")
-        case "d":
-            console.print(f"{ch}", style="red")
-        case "e":
-            console.print(f"{ch}", style="red")
-        case "f":
-            console.print(f"{ch}", style="red")
-        case "g":
-            console.print(f"{ch}", style="red")
-        case _:
-            console.print(f"other: {ch}", style="blue")
 
 
 if __name__ == "__main__":
