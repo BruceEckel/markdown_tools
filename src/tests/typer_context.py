@@ -1,5 +1,5 @@
 import typer
-import readchar
+import readchar  # Reads a single character, no CR required
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -31,7 +31,7 @@ def menu(ctx: typer.Context):
 @app.callback()
 def main(ctx: typer.Context):
     """
-    Manage users in the awesome CLI app.
+    Attempt to create a menu-driven Typer app
     """
     if ctx.invoked_subcommand == "m":
         print(ctx.get_help())
