@@ -3,27 +3,26 @@
 Tests and maintains Markdown files containing embedded code listings.
 """
 import os
-from typing import List, Optional
-from typing_extensions import Annotated
-from pathlib import Path
-import subprocess
 import platform
+import subprocess
+from pathlib import Path
+from typing import Callable, List, Optional
+
 import typer
-from markdown_tools.console import console
 from markdown_tools.check_markdown import check_markdown
+from markdown_tools.console import console
+from markdown_tools.display_comments import display_markdown_comments
+from markdown_tools.edit_changed_examples import edit_example_changes
 from markdown_tools.insert_codepath_tags import (
     insert_codepath_tags,
     validate_codepath_tags,
 )
 from markdown_tools.numbered_file import NumberedFile
-from markdown_tools.edit_changed_examples import edit_example_changes
 from markdown_tools.update_examples import (
-    update_examples_with_source_code,
+    update_examples_from_source_code,
 )
-from markdown_tools.display_comments import display_markdown_comments
 from rich.panel import Panel, Text
-import readchar
-
+from typing_extensions import Annotated
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -31,6 +30,23 @@ app = typer.Typer(
     context_settings={"help_option_names": ["-h"]},
     rich_markup_mode="rich",
 )
+
+
+def process_files(
+    filename: Optional[str],
+    processor: Callable[..., None],
+    *args,
+    **kwargs,
+) -> None:
+    """
+    Process a single file or all Markdown files in the current directory
+    using the provided processor function.
+    """
+    if filename:
+        processor(Path(filename), *args, **kwargs)
+    else:
+        for md in Path(".").glob("*.md"):
+            processor(md, *args, **kwargs)
 
 
 def clear_screen():
@@ -58,7 +74,7 @@ def run_powershell(script_path: Path):
 
 
 @app.command("1", rich_help_panel="Validation")
-def a(
+def basic(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -78,15 +94,11 @@ def a(
         assert md.exists(), f"{md} does not exist"
         console.print(check_markdown(md))
 
-    if filename:
-        _check(Path(filename))
-    else:
-        for md in Path(".").glob("*.md"):
-            _check(md)
+    process_files(filename, _check)
 
 
 @app.command("2", rich_help_panel="Validation")
-def b(
+def show_special_comments(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -95,15 +107,11 @@ def b(
     ] = None
 ):
     "Display Markdown Comments that follow special format"
-    if filename:
-        display_markdown_comments(Path(filename))
-    else:
-        for md in Path(".").glob("*.md"):
-            display_markdown_comments(md)
+    process_files(filename, display_markdown_comments)
 
 
 @app.command("3", rich_help_panel="Validation")
-def c(
+def verify_code_paths(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -114,17 +122,11 @@ def c(
     """
     Verify code path comment tags are correct
     """
-    if filename:
-        validate_codepath_tags(Path(filename))
-    else:
-        for md in [
-            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
-        ]:
-            validate_codepath_tags(md)
+    process_files(filename, validate_codepath_tags)
 
 
 @app.command("4", rich_help_panel="Validation")
-def d(
+def vscode_on_changes(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -138,11 +140,8 @@ def d(
     file_edit_script = Path("edit_changed_files.ps1")
     if file_edit_script.exists():
         file_edit_script.unlink()
-    if filename:
-        edit_example_changes(Path(filename), file_edit_script)
-    else:
-        for md in Path(".").glob("*.md"):
-            edit_example_changes(md, file_edit_script)
+
+    process_files(filename, edit_example_changes, file_edit_script)
 
     if file_edit_script.exists():
         display(f"Executing {file_edit_script}")
@@ -152,7 +151,7 @@ def d(
 
 
 @app.command("5", rich_help_panel="Modification")
-def e(
+def update_examples(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -163,15 +162,11 @@ def e(
     """
     Updates examples in markdown from source code files
     """
-    if filename:
-        update_examples_with_source_code(Path(filename))
-    else:
-        for md in Path(".").glob("*.md"):
-            update_examples_with_source_code(md)
+    process_files(filename, update_examples_from_source_code)
 
 
 @app.command("6", rich_help_panel="Modification")
-def f(
+def insert_codepaths(
     filename: Annotated[
         Optional[str],
         typer.Argument(
@@ -182,17 +177,11 @@ def f(
     """
     Insert code path comment tag in a file that doesn't have one
     """
-    if filename:
-        insert_codepath_tags(Path(filename))
-    else:
-        for md in [
-            p for p in Path(".").glob("*.md") if ".tmp" not in p.name
-        ]:
-            insert_codepath_tags(md)
+    process_files(filename, insert_codepath_tags)
 
 
 @app.command("7", rich_help_panel="Modification")
-def g(
+def renumber_chapters(
     go: Annotated[
         Optional[str],
         typer.Argument(help="'go': perform the changes"),
@@ -241,17 +230,17 @@ def doc():
 
 
 # @app.command("m", rich_help_panel="Menu")
-def menu_callback(value: bool):
-    if value:
-        print("Menu Callback")
-        raise typer.Exit()
+# def menu_callback(value: bool):
+#     if value:
+#         print("Menu Callback")
+#         raise typer.Exit()
 
 
 def main(
-    menu: Annotated[
-        Optional[bool],
-        typer.Option("--menu", callback=menu_callback),
-    ] = None,
+    # menu: Annotated[
+    #     Optional[bool],
+    #     typer.Option("--menu", callback=menu_callback),
+    # ] = None,
 ):
     clear_screen()
     app()

@@ -10,7 +10,7 @@ from markdown_tools.console import console
 from markdown_tools.compare_strings import compare_strings, DiffResult
 
 
-def update_examples_with_source_code(md: Path) -> None:
+def update_examples_from_source_code(md: Path) -> None:
     md_file = MarkdownFile(md)
     md_file.display_name_once()
     for (
