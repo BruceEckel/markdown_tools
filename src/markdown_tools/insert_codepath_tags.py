@@ -34,12 +34,12 @@ def validate_codepath_tags(md: Path):
 
 def insert_codepath_tags(md: Path):
     md_file = MarkdownFile(md)
+    code_path: CodePath | None = None
     md_file.display_name_once()
     tmp_file = md_file.file_path.with_suffix(".tmp.md")
     if tmp_file.exists():
         console.print(f"Deleting: {tmp_file}")
         tmp_file.unlink()
-    code_path: CodePath | None = None
     for part in md_file:
         if isinstance(part, CodePath):
             code_path = part  # Most recent CodePath

@@ -221,7 +221,7 @@ def renumber_chapters(
     make_changes(appendix_changes)
 
 
-# Callback used here only to produce the __doc__ string
+# @callback used here only to produce the __doc__ string
 @app.callback()
 def doc():
     """
